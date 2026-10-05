@@ -1,0 +1,10 @@
+{
+  "object_name": "YOUR_TARGET_NETWORK_OBJECT",
+  "exclude_object_name": "YOUR_EXCLUSION_NETWORK_OBJECT",
+  "api_token": "REPLACE_WITH_CGF_API_TOKEN",
+  "api_auth_header": "Basic REPLACE_WITH_CGF_BASIC_AUTH_VALUE",
+  "api_scheme": "https",
+  "api_host": "firewall.example.com:8443",
+  "debug": false,
+  "logfile": "/var/tmp/barracuda_event_forward.log"
+}

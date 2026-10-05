@@ -14,6 +14,10 @@ Zobacz [instrukcję skryptu](Barracuda/Lets%20Encrypt/README.md) oraz [przykład
 
 Skrypt w [`Barracuda/DNS`](Barracuda/DNS/) pobiera i scala zewnętrzne listy domen, konwertuje je do strefy RPZ i przeładowuje usługę Caching DNS w Barracuda CGF po wykryciu zmian. Opis źródeł, działania i wymagań znajduje się w [README skryptu DNS](Barracuda/DNS/README.md).
 
+#### Obsługa zdarzeń
+
+Skrypty w [`Barracuda/Eventing`](Barracuda/Eventing/) pozwalają zrzucić zmienne środowiskowe przekazane przez zdarzenie CGF do JSON albo uruchomić reakcję na adres IP wyodrębniony ze zdarzenia. Szczegóły przepływu, konfiguracji i ograniczeń są w [README Eventing](Barracuda/Eventing/README.md).
+
 ## Bezpieczeństwo
 
 - Przed użyciem sprawdź wymagania i skutki działania skryptu w docelowej wersji CGF.
