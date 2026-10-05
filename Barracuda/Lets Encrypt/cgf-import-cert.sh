@@ -7,24 +7,24 @@ set -uo pipefail
 ENV_FILE="${ENV_FILE:-/root/.cgf-import.env}"
 [ -f "$ENV_FILE" ] && . "$ENV_FILE"
 
-CGF_HOST="${CGF_HOST:?Ustaw CGF_HOST (np. 10.0.0.1)}"
+CGF_HOST="${CGF_HOST:?Ustaw CGF_HOST (np. firewall.example.com)}"
 CGF_SCHEME="${CGF_SCHEME:-https}"
 CGF_PORT="${CGF_PORT:-8443}"
 CGF_TOKEN="${CGF_TOKEN:?Ustaw CGF_TOKEN (X-API-Token z CGF)}"
-CGF_CERT_NAME="${CGF_CERT_NAME:-wildcard-fix-it}"      # nazwa w magazynie CGF (bez spacji/znaków specjalnych)
+CGF_CERT_NAME="${CGF_CERT_NAME:-letsencrypt-certificate}" # nazwa w magazynie CGF
 CGF_COMMENT="${CGF_COMMENT:-Imported from NPM - LetsEncrypt}"
-CGF_INSECURE="${CGF_INSECURE:-1}"                      # 1 = curl -k (CGF zwykle ma self-signed na 8443); ustaw 0 + CGF_CACERT
+CGF_INSECURE="${CGF_INSECURE:-0}"                      # 1 = curl -k; domyślnie weryfikuj certyfikat TLS
 CGF_CACERT="${CGF_CACERT:-}"
 # CGF wymaga samopodpisanego root CA w łańcuchu (fullchain z LE go nie zawiera - ma tylko cross-signed).
 ROOT_CA_DIR="${ROOT_CA_DIR:-/root/cgf-roots}"   # samopodpisane root CA (*.pem); wybierany automatycznie wg lancucha
 ROOT_CA_FILE="${ROOT_CA_FILE:-}"                 # opcjonalnie wymus konkretny root
 
-LIVE_DIR="${LIVE_DIR:-/data/compose/4/letsencrypt/live/npm-2}"
+LIVE_DIR="${LIVE_DIR:?Ustaw LIVE_DIR na katalog z fullchain.pem i privkey.pem}"
 FULLCHAIN="$LIVE_DIR/fullchain.pem"
 PRIVKEY="$LIVE_DIR/privkey.pem"
 STATE_FILE="${STATE_FILE:-/var/lib/cgf-import-cert/${CGF_CERT_NAME}.sha256}"
 # Weryfikacja po imporcie (i przy kazdym uruchomieniu): lista "host:port=sciezka-uslugi", spacja jako separator, np.
-#   "ssl.fix-it.com.pl:443=service-container/VPN auth.fix-it.com.pl:443=service-container/NGFW"
+#   "vpn.example.com:443=service-container/VPN gateway.example.com:443=service-container/NGFW"
 # Skrypt pobiera cert serwowany przez host:port; jesli jego fingerprint != nowy cert -> restart uslugi
 # (POST /rest/control/v1/<sciezka>/restart) i ponowne sprawdzenie. Puste = bez weryfikacji/restartu.
 CGF_VERIFY="${CGF_VERIFY:-}"
@@ -37,7 +37,7 @@ DRY_RUN="${DRY_RUN:-0}"
 log() { echo "[$(date '+%F %T')] $*"; }
 die() { log "BŁĄD: $*" >&2; exit 1; }
 
-for b in curl jq openssl; do command -v "$b" >/dev/null || die "brak $b"; done
+for b in curl jq openssl timeout; do command -v "$b" >/dev/null || die "brak $b"; done
 [ -r "$FULLCHAIN" ] && [ -r "$PRIVKEY" ] || die "brak plików $FULLCHAIN / $PRIVKEY"
 
 # sprawdź, że klucz pasuje do certyfikatu

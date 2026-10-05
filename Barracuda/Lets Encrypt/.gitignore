@@ -1,0 +1,5 @@
+.cgf-import.env
+privkey.pem
+*.key
+*.p12
+*.pfx
