@@ -10,6 +10,10 @@ Skrypt w [`Barracuda/Lets Encrypt`](Barracuda/Lets%20Encrypt/) importuje do Barr
 
 Zobacz [instrukcję skryptu](Barracuda/Lets%20Encrypt/README.md) oraz [przykładową konfigurację](Barracuda/Lets%20Encrypt/.cgf-import.env.example).
 
+#### Zewnętrzne listy DNS
+
+Skrypt w [`Barracuda/DNS`](Barracuda/DNS/) pobiera i scala zewnętrzne listy domen, konwertuje je do strefy RPZ i przeładowuje usługę Caching DNS w Barracuda CGF po wykryciu zmian. Opis źródeł, działania i wymagań znajduje się w [README skryptu DNS](Barracuda/DNS/README.md).
+
 ## Bezpieczeństwo
 
 - Przed użyciem sprawdź wymagania i skutki działania skryptu w docelowej wersji CGF.
