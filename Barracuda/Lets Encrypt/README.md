@@ -1,21 +1,23 @@
 # Synchronizacja certyfikatów z Barracuda CGF
 
-Skrypt `cgf-import-cert.sh` importuje certyfikat TLS i odpowiadający mu klucz prywatny do magazynu certyfikatów Barracuda CloudGen Firewall (CGF) przez REST API. Certyfikat może pochodzić z Nginx Proxy Manager lub innego klienta ACME, który udostępnia pliki `fullchain.pem` i `privkey.pem`.
+Skrypt `cgf-import-cert.sh` importuje przez REST API certyfikat TLS odnawiany przez Nginx Proxy Manager (NPM) oraz odpowiadający mu klucz prywatny do magazynu certyfikatów Barracuda CloudGen Firewall (CGF). Skrypt nie wystawia ani nie odnawia certyfikatu; odczytuje aktualne pliki `fullchain.pem` i `privkey.pem` z katalogu NPM wskazanego przez `LIVE_DIR`.
+
+Certyfikat używany w tej integracji musi mieć klucz **RSA**. W NPM wybierz typ klucza RSA podczas wystawiania certyfikatu Let's Encrypt; domyślnie NPM może użyć ECDSA. Klucz RSA jest wymagany, aby certyfikat był dostępny do użycia w docelowych usługach CGF.
 
 Opcjonalnie skrypt sprawdza certyfikat prezentowany przez skonfigurowane usługi CGF. Jeśli po imporcie usługa nadal prezentuje poprzedni certyfikat, może zlecić restart wskazanej usługi i ponowić weryfikację. Weryfikacja i restarty są wyłączone, gdy `CGF_VERIFY` jest puste.
 
 ## Wymagania
 
 - Bash na systemie Linux.
-- Dostęp do plików certyfikatu i klucza prywatnego.
+- Certyfikat Let's Encrypt zarządzany przez NPM, wystawiony z kluczem RSA, oraz dostęp do jego plików `fullchain.pem` i `privkey.pem`.
 - Łączność z REST API CGF i token z uprawnieniami wymaganymi do odczytu, tworzenia i importu wpisów certyfikatów. Do restartowania usług potrzebne są również odpowiednie uprawnienia kontrolne.
 - Narzędzia `curl`, `jq`, `openssl` i `timeout`.
-- Zaufany certyfikat CA dla HTTPS. Skrypt domyślnie ma `CGF_INSECURE=1`, co wyłącza weryfikację certyfikatu TLS przez `curl`; ustaw `CGF_INSECURE=0` i skonfiguruj `CGF_CACERT`, jeśli wymagany jest niestandardowy urząd CA. Nie używaj niezabezpieczonego połączenia HTTP w niezaufanej sieci.
+- Zaufany certyfikat CA dla HTTPS. Skrypt domyślnie weryfikuje certyfikat TLS (`CGF_INSECURE=0`); skonfiguruj `CGF_CACERT`, jeśli wymagany jest niestandardowy urząd CA. Nie używaj niezabezpieczonego połączenia HTTP w niezaufanej sieci.
 
 ## Przepływ działania
 
-1. Wczytuje konfigurację oraz sprawdza wymagane pliki i narzędzia.
-2. Weryfikuje, czy klucz prywatny odpowiada certyfikatowi, a następnie oblicza fingerprint SHA-256.
+1. Odczytuje aktualny certyfikat i klucz z katalogu NPM wskazanego przez `LIVE_DIR`, a następnie sprawdza wymagane pliki i narzędzia.
+2. Weryfikuje, czy klucz prywatny odpowiada certyfikatowi RSA, a następnie oblicza fingerprint SHA-256.
 3. Pomija ponowny import, jeśli fingerprint nie zmienił się od poprzedniego uruchomienia, chyba że ustawiono `FORCE=1`.
 4. Przygotowuje łańcuch certyfikatów i format klucza wymagany przez API CGF.
 5. Sprawdza wpis w magazynie CGF, tworzy go w razie potrzeby i importuje certyfikat.
@@ -45,7 +47,7 @@ Skrypt wczytuje `/root/.cgf-import.env` domyślnie. Zmienną `ENV_FILE` można w
 | `CGF_COMMENT` | Komentarz do wpisu certyfikatu. |
 | `CGF_INSECURE` | `1` wyłącza weryfikację TLS przez `curl`; domyślnie `0`. |
 | `CGF_CACERT` | Opcjonalna ścieżka do certyfikatu CA używana, gdy `CGF_INSECURE=0`. |
-| `LIVE_DIR` | Katalog zawierający `fullchain.pem` i `privkey.pem`; wymagany. |
+| `LIVE_DIR` | Katalog NPM zawierający aktualne `fullchain.pem` i `privkey.pem`; wymagany. |
 | `ROOT_CA_DIR` | Katalog z zaufanymi, samopodpisanymi certyfikatami root CA; domyślnie `/root/cgf-roots`. |
 | `ROOT_CA_FILE` | Opcjonalnie wskazuje konkretny root CA zamiast automatycznego wyboru. |
 | `STATE_FILE` | Plik fingerprintu ostatnio zaimportowanego certyfikatu; domyślnie `/var/lib/cgf-import-cert/<nazwa>.sha256`. |
@@ -87,7 +89,8 @@ Skrypt wypisuje komunikaty na standardowe wyjście i błędy. Nie wysyła powiad
 
 - Klucz prywatny jest używany do importu do CGF i przechowywany tymczasowo w pliku z ograniczonymi uprawnieniami; pliki tymczasowe są usuwane po zakończeniu skryptu.
 - Token API jest przekazywany przez HTTPS tylko wtedy, gdy skonfigurowano HTTPS. Użycie `CGF_INSECURE=1` pozwala na połączenie bez weryfikacji certyfikatu serwera i zwiększa ryzyko przechwycenia tokenu oraz klucza.
-- Skrypt nie odświeża certyfikatów ACME. Oczekuje gotowych plików PEM i powinien być uruchamiany po ich odnowieniu.
+- NPM odpowiada za wystawienie i odnowienie certyfikatu. Skrypt oczekuje gotowych plików PEM i powinien być uruchamiany po odnowieniu; samo odnowienie w NPM nie uruchamia go automatycznie.
+- Skrypt nie wymusza typu RSA w kodzie. Sprawdź typ klucza certyfikatu w NPM przed uruchomieniem; dla tej integracji certyfikaty ECDSA nie spełniają wymagań docelowych usług CGF.
 - Nie każda konfiguracja usług automatycznie przeładowuje certyfikat po imporcie. Włącz `CGF_VERIFY` dopiero po sprawdzeniu identyfikatorów usług i skutków ich restartowania.
 - Skrypt akceptuje odpowiedzi HTTP 2xx. Szczegóły obsługiwanych endpointów i formatów zależą od wersji API CGF.
 - Nie uruchamiaj skryptu na produkcji przed weryfikacją uprawnień tokenu, łańcucha certyfikatów, nazw usług i zachowania restartów w swoim środowisku.

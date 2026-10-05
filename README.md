@@ -6,7 +6,7 @@ Repozytorium zawiera skrypty i przykłady integracji, które mogą być dostosow
 
 ### Barracuda CloudGen Firewall
 
-Skrypt w [`Barracuda/Lets Encrypt`](Barracuda/Lets%20Encrypt/) synchronizuje certyfikat Let's Encrypt z magazynem certyfikatów Barracuda CloudGen Firewall (CGF) przez REST API. Opcjonalnie sprawdza, jaki certyfikat jest udostępniany przez wskazane usługi, i może zlecić ich restart, jeśli certyfikat nie został przeładowany.
+Skrypt w [`Barracuda/Lets Encrypt`](Barracuda/Lets%20Encrypt/) importuje do Barracuda CloudGen Firewall (CGF) certyfikat Let's Encrypt odnawiany przez Nginx Proxy Manager (NPM). Certyfikat używany w tej integracji musi być wystawiony z kluczem RSA. Opcjonalnie skrypt sprawdza certyfikat prezentowany przez wskazane usługi CGF i może zlecić ich restart, jeśli certyfikat nie został przeładowany.
 
 Zobacz [instrukcję skryptu](Barracuda/Lets%20Encrypt/README.md) oraz [przykładową konfigurację](Barracuda/Lets%20Encrypt/.cgf-import.env.example).
 
