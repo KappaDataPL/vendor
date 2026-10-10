@@ -3,7 +3,7 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "barracuda-cgf-api",
-    "generation": 8,
+    "generation": 20,
     "creationTimestamp": "2026-10-10T20:11:59Z",
     "labels": {},
     "annotations": {}
@@ -252,6 +252,7 @@
         "spec": {
           "id": 12,
           "title": "Site-to-Site Tunnels",
+          "description": "Jeden wiersz na tunel. Family state i Threads (aktywne / wszystkie) dotyczą całej rodziny tuneli; Status i Sessions konkretnego tunelu.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -268,7 +269,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "with v as (select h.host, substring(i.name from '^S2S tunnel (.*): ') as tunnel, substring(i.name from ': (.*)$') as attr, case when i.value_type = 4 then (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) else (select hu.value::text from history_uint hu where hu.itemid = i.itemid order by hu.clock desc limit 1) end as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.value_type in (3,4) and i.key_ like 'cgf_vpn.s2s.%' and i.name like 'S2S tunnel %') select host as \"Host\", tunnel as \"Tunnel\", max(val) filter (where attr = 'Status') as \"Status\", (max(val) filter (where attr = 'Sessions'))::int as \"Sessions\", max(val) filter (where attr = 'Peer address') as \"Peer\", max(val) filter (where attr = 'Local address') as \"Local\", max(val) filter (where attr = 'Encryption') as \"Encryption\", max(val) filter (where attr = 'Authentication') as \"Auth\", max(val) filter (where attr = 'Transport') as \"Transport\", max(val) filter (where attr = 'Type') as \"Type\" from v group by 1, 2 order by 1, 2"
+                        "rawSql": "with raw as (select h.host, i.name, substring(i.key_ from '\\[\"(.*)\"\\]') as k, substring(i.name from ': (.*)$') as attr, case when i.value_type = 4 then (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) else (select hu.value::text from history_uint hu where hu.itemid = i.itemid order by hu.clock desc limit 1) end as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.value_type in (3,4) and i.key_ like 'cgf_vpn.s2s.%' and i.key_ not like 'cgf_vpn.s2s.health.%' and i.name like 'S2S tunnel %'), t as (select host, k, split_part(k, ':', 1) as fam, max(substring(name from '^S2S tunnel (.*): ')) as tunnel, max(val) filter (where attr = 'Status') as status, (max(val) filter (where attr = 'Sessions'))::int as sessions, max(val) filter (where attr = 'Peer address') as peer, max(val) filter (where attr = 'Local address') as loc, max(val) filter (where attr = 'Encryption') as enc, max(val) filter (where attr = 'Authentication') as auth, max(val) filter (where attr = 'Transport') as transport, max(val) filter (where attr = 'Type') as typ from raw where name not like 'S2S tunnel family %' group by host, k), f as (select host, k as fam, max(val) filter (where attr = 'Aggregate state') as fstate, max(val) filter (where attr = 'Threads active') as act, max(val) filter (where attr like 'Threads total%') as tot from raw where name like 'S2S tunnel family %' group by host, k) select t.host as \"Host\", t.fam as \"Family\", f.fstate as \"Family state\", f.act || ' / ' || f.tot as \"Threads\", t.tunnel as \"Tunnel\", t.status as \"Status\", t.sessions as \"Sessions\", t.peer as \"Peer\", t.loc as \"Local\", t.enc as \"Encryption\", t.auth as \"Auth\", t.transport as \"Transport\", t.typ as \"Type\" from t left join f on f.host = t.host and f.fam = t.fam order by 1, 2, 5"
                       },
                       "labels": {
                         "grafana.app/export-label": "grafana-postgresql-datasource-1",
@@ -319,9 +320,90 @@
                   {
                     "matcher": {
                       "id": "byName",
+                      "options": "Host"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 120
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Family state"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "DEGRADED": {
+                                "color": "orange",
+                                "index": 4
+                              },
+                              "DOWN": {
+                                "color": "red",
+                                "index": 2
+                              },
+                              "PARTIAL": {
+                                "color": "orange",
+                                "index": 5
+                              },
+                              "UP": {
+                                "color": "green",
+                                "index": 0
+                              },
+                              "down": {
+                                "color": "red",
+                                "index": 3
+                              },
+                              "up": {
+                                "color": "green",
+                                "index": 1
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Threads"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 85
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
                       "options": "Status"
                     },
                     "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      },
                       {
                         "id": "custom.cellOptions",
                         "value": {
@@ -354,6 +436,18 @@
                             "type": "value"
                           }
                         ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Sessions"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 85
                       }
                     ]
                   }
@@ -452,7 +546,7 @@
             "spec": {
               "options": {
                 "colorMode": "value",
-                "graphMode": "none",
+                "graphMode": "area",
                 "justifyMode": "auto",
                 "orientation": "auto",
                 "percentChangeColorMode": "standard",
@@ -579,7 +673,7 @@
             "spec": {
               "options": {
                 "colorMode": "value",
-                "graphMode": "none",
+                "graphMode": "area",
                 "justifyMode": "auto",
                 "orientation": "auto",
                 "percentChangeColorMode": "standard",
@@ -706,7 +800,7 @@
             "spec": {
               "options": {
                 "colorMode": "value",
-                "graphMode": "none",
+                "graphMode": "area",
                 "justifyMode": "auto",
                 "orientation": "auto",
                 "percentChangeColorMode": "standard",
@@ -2010,7 +2104,9 @@
                   ],
                   "displayMode": "table",
                   "placement": "bottom",
-                  "showLegend": true
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
                 },
                 "tooltip": {
                   "hideZeros": false,
@@ -2186,7 +2282,9 @@
                   ],
                   "displayMode": "table",
                   "placement": "bottom",
-                  "showLegend": true
+                  "showLegend": true,
+                  "sortBy": "Max",
+                  "sortDesc": true
                 },
                 "tooltip": {
                   "hideZeros": false,
@@ -2255,182 +2353,6 @@
           }
         }
       },
-      "panel-26": {
-        "kind": "Panel",
-        "spec": {
-          "id": 26,
-          "title": "S2S VPN volume (rolling 24h)",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "alexanderzobnin-zabbix-datasource",
-                      "version": "v0",
-                      "spec": {
-                        "application": {
-                          "filter": ""
-                        },
-                        "countTriggersBy": "",
-                        "evaltype": "0",
-                        "functions": [],
-                        "group": {
-                          "filter": "$Group"
-                        },
-                        "host": {
-                          "filter": "$Hostname"
-                        },
-                        "item": {
-                          "filter": "/^Site-to-site VPN bytes (in|out) \\(24h\\)$/"
-                        },
-                        "itemTag": {
-                          "filter": "type: API"
-                        },
-                        "macro": {
-                          "filter": ""
-                        },
-                        "options": {
-                          "count": true,
-                          "disableDataAlignment": false,
-                          "minSeverity": 3,
-                          "showDisabledItems": false,
-                          "skipEmptyValues": false,
-                          "useTrends": "default",
-                          "useZabbixValueMapping": false
-                        },
-                        "proxy": {
-                          "filter": ""
-                        },
-                        "queryType": "0",
-                        "resultFormat": "time_series",
-                        "schema": 12,
-                        "table": {
-                          "skipEmptyValues": false
-                        },
-                        "tags": {
-                          "filter": ""
-                        },
-                        "textFilter": "",
-                        "trigger": {
-                          "filter": ""
-                        },
-                        "triggers": {
-                          "acknowledged": 2
-                        }
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
-                        "grafana.app/export-datasource-name": "zabbix"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [
-                {
-                  "kind": "Transformation",
-                  "group": "renameByRegex",
-                  "spec": {
-                    "options": {
-                      "regex": "/Site-to-site VPN bytes (in|out) \\(24h\\)/",
-                      "renamePattern": "$1"
-                    }
-                  }
-                }
-              ],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "13.2.3",
-            "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "min",
-                    "max"
-                  ],
-                  "displayMode": "table",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "bytes",
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 10,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": true,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
       "panel-28": {
         "kind": "Panel",
         "spec": {
@@ -2462,7 +2384,7 @@
                           "filter": "$Hostname"
                         },
                         "item": {
-                          "filter": "/^Interface .*: (Inbound|Outbound) bytes per second$/"
+                          "filter": "/^Interface ${Interface:regex}: (Inbound|Outbound) bytes per second$/"
                         },
                         "itemTag": {
                           "filter": "type: API"
@@ -2652,7 +2574,7 @@
                           "filter": "$Hostname"
                         },
                         "item": {
-                          "filter": "/^Interface .*: (Inbound|Outbound) packets per second$/"
+                          "filter": "/^Interface ${Interface:regex}: (Inbound|Outbound) packets per second$/"
                         },
                         "itemTag": {
                           "filter": "type: API"
@@ -2969,7 +2891,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "with v as (select h.host, substring(i.name from '^Interface (.*): ') as ifname, substring(i.name from ': (.*)$') as attr, (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.value_type = 4 and i.key_ like 'cgf_if.%') select host as \"Host\", ifname as \"Interface\", max(val) filter (where attr = 'Link state') as \"Link\", max(val) filter (where attr = 'Interface type') as \"Type\", max(val) filter (where attr = 'Duplex mode') as \"Duplex\", max(val) filter (where attr = 'Link negotiation') as \"Negotiation\" from v group by 1, 2 order by 1, 2"
+                        "rawSql": "with v as (select h.host, substring(i.name from '^Interface (.*): ') as ifname, substring(i.name from ': (.*)$') as attr, (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.value_type = 4 and i.key_ like 'cgf_if.%' and substring(i.name from '^Interface (.*): ') in ($Interface)) select host as \"Host\", ifname as \"Interface\", max(val) filter (where attr = 'Link state') as \"Link\", max(val) filter (where attr = 'Interface type') as \"Type\", max(val) filter (where attr = 'Duplex mode') as \"Duplex\", max(val) filter (where attr = 'Link negotiation') as \"Negotiation\" from v group by 1, 2 order by 1, 2"
                       },
                       "labels": {
                         "grafana.app/export-label": "grafana-postgresql-datasource-1",
@@ -3095,7 +3017,7 @@
                           "filter": "$Hostname"
                         },
                         "item": {
-                          "filter": "/^Interface .*: Errors per second$/"
+                          "filter": "/^Interface ${Interface:regex}: Errors per second$/"
                         },
                         "itemTag": {
                           "filter": "type: API"
@@ -3578,7 +3500,7 @@
         "spec": {
           "id": 34,
           "title": "Firewall sessions total",
-          "description": "UWAGA: item zwraca stale 1 (body.total przy count=1); do weryfikacji w szablonie.",
+          "description": "body.total z /firewall/v1/live. Gdy lista połączeń jest obcięta (item 'Firewall connection list truncated' = 1), wartość zatrzymuje się na limicie zapytania (1000).",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -3773,7 +3695,7 @@
                           "filter": "/^S2S tunnel .*: Sessions$/"
                         },
                         "itemTag": {
-                          "filter": ""
+                          "filter": "type: API"
                         },
                         "macro": {
                           "filter": ""
@@ -4040,7 +3962,7 @@
                           "filter": "/^VPN user connections observed/"
                         },
                         "itemTag": {
-                          "filter": ""
+                          "filter": "type: API"
                         },
                         "macro": {
                           "filter": ""
@@ -4283,8 +4205,8 @@
         "kind": "Panel",
         "spec": {
           "id": 42,
-          "title": "Licenses & subscriptions",
-          "description": "Dni do wygaśnięcia: 99999 oznacza brak daty wygaśnięcia.",
+          "title": "Licenses",
+          "description": "Jeden wiersz na licencję. Days left to najbliższa data wśród jej modułów; State pokazuje stan inny niż ok, jeśli ma go którykolwiek moduł. Moduły bez danych są pominięte.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -4301,7 +4223,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "with v as (select h.host, case when i.key_ like 'cgf_license.%' then 'License' else 'Subscription' end as kind, substring(i.name from '^(?:License|Subscription) (.*): [^:]+$') as nm, substring(i.name from ': ([^:]+)$') as attr, case i.value_type when 4 then (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) else (select round(hf.value::numeric)::text from history hf where hf.itemid = i.itemid order by hf.clock desc limit 1) end as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags = 4 and i.value_type in (0,4) and (i.key_ like 'cgf_license.%' or i.key_ like 'cgf_subscription.%')) select host as \"Host\", kind as \"Kind\", nm as \"Name\", max(val) filter (where attr = 'State') as \"State\", max(val) filter (where attr = 'Status') as \"Status\", (max(val) filter (where attr = 'Days until expiry'))::bigint as \"Days left\" from v group by 1, 2, 3 order by 1, 2, 3"
+                        "rawSql": "with v as (select h.host, substring(i.name from '^License (.*): [^:]+$') as nm, substring(i.name from ': ([^:]+)$') as attr, case i.value_type when 4 then (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) else (select round(hf.value::numeric)::text from history hf where hf.itemid = i.itemid order by hf.clock desc limit 1) end as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags = 4 and i.value_type in (0,4) and i.key_ like 'cgf_license.%'), m as (select host, coalesce(substring(nm from '^[0-9]+-[A-Za-z]+-[A-Za-z0-9]+-(.*)-[0-9]+(?: \\[.*\\])?$'), regexp_replace(nm, ' \\[.*\\]$', '')) as product, max(val) filter (where attr = 'State') as st, max(val) filter (where attr = 'Status') as stt, (max(val) filter (where attr = 'Days until expiry'))::bigint as days from v group by host, nm having (max(val) filter (where attr = 'Days until expiry'))::bigint < 99999) select host as \"Host\", product as \"Product\", coalesce(max(st) filter (where st <> 'ok'), 'ok') as \"State\", string_agg(distinct stt, ', ') as \"Status\", min(days) as \"Days left\" from m group by host, product order by 5, 1, 2"
                       },
                       "labels": {
                         "grafana.app/export-label": "grafana-postgresql-datasource-1",
@@ -4348,9 +4270,94 @@
                   {
                     "matcher": {
                       "id": "byName",
+                      "options": "Host"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "State"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "critical": {
+                                "color": "red",
+                                "index": 4
+                              },
+                              "error": {
+                                "color": "red",
+                                "index": 2
+                              },
+                              "fail": {
+                                "color": "red",
+                                "index": 3
+                              },
+                              "no data": {
+                                "color": "#3d4048",
+                                "index": 6
+                              },
+                              "ok": {
+                                "color": "green",
+                                "index": 0
+                              },
+                              "unknown": {
+                                "color": "#808080",
+                                "index": 5
+                              },
+                              "warning": {
+                                "color": "orange",
+                                "index": 1
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
                       "options": "Days left"
                     },
                     "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      },
                       {
                         "id": "custom.cellOptions",
                         "value": {
@@ -4382,7 +4389,7 @@
                           {
                             "options": {
                               "99999": {
-                                "color": "green",
+                                "color": "text",
                                 "index": 0,
                                 "text": "no expiry"
                               }
@@ -4394,6 +4401,883 @@
                     ]
                   }
                 ]
+              }
+            }
+          }
+        }
+      },
+      "panel-43": {
+        "kind": "Panel",
+        "spec": {
+          "id": 43,
+          "title": "Tunnel packets per sample window",
+          "description": "Suma pakietów z próbek zwróconych przez API w jednym odczycie (co 5 min); to nie jest prędkość na sekundę.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Latest sample packets (local|peer)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/S2S tunnel (.*): Latest sample packets (local|peer)/",
+                      "renamePattern": "$1 $2"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 1,
+                    "showPoints": "auto",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-44": {
+        "kind": "Panel",
+        "spec": {
+          "id": 44,
+          "title": "Tunnel bytes per sample window (API units)",
+          "description": "Suma pola m_iBytes* z próbek w jednym odczycie. Jednostka niepewna: stosunek do liczby pakietów (ok. 10 na pakiet) nie pasuje do bajtów.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Latest sample bytes (local|peer)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/S2S tunnel (.*): Latest sample bytes (local|peer)/",
+                      "renamePattern": "$1 $2"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 1,
+                    "showPoints": "auto",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-45": {
+        "kind": "Panel",
+        "spec": {
+          "id": 45,
+          "title": "Tunnel drops per sample window",
+          "description": "Suma dropów z próbek zwróconych przez API w jednym odczycie (co 5 min).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Latest sample drops (local|peer)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/S2S tunnel (.*): Latest sample drops (local|peer)/",
+                      "renamePattern": "$1 $2"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "sum",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 60,
+                    "lineWidth": 1,
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-47": {
+        "kind": "Panel",
+        "spec": {
+          "id": 47,
+          "title": "Bandwidth detection: local",
+          "description": "Ostatnia wartość m_llEffBW2Local per tunel (wartość surowa z API, jednostka nieopisana).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Effective bandwidth local \\(API units\\)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/.*S2S tunnel (.*): Effective bandwidth local \\(API units\\)/",
+                      "renamePattern": "$1"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "bargauge",
+            "version": "",
+            "spec": {
+              "options": {
+                "displayMode": "gradient",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "valueMode": "color"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "blue"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "blue"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-48": {
+        "kind": "Panel",
+        "spec": {
+          "id": 48,
+          "title": "Bandwidth detection: peer",
+          "description": "Ostatnia wartość m_llEffBW2Peer per tunel (wartość surowa z API, jednostka nieopisana).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Effective bandwidth peer \\(API units\\)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/.*S2S tunnel (.*): Effective bandwidth peer \\(API units\\)/",
+                      "renamePattern": "$1"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "bargauge",
+            "version": "",
+            "spec": {
+              "options": {
+                "displayMode": "gradient",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "valueMode": "color"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "purple"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "purple"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-49": {
+        "kind": "Panel",
+        "spec": {
+          "id": 49,
+          "title": "Tunnel latency",
+          "description": "Średnia z próbek health zwróconych przez API w jednym odczycie (co 5 min). Jednostka w API nieopisana; przyjęte milisekundy. Linie: 50 ms i 150 ms.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Latency \\(API units\\)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/S2S tunnel (.*): Latency \\(API units\\)/",
+                      "renamePattern": "$1"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "min",
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "ms",
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "transparent"
+                      },
+                      {
+                        "value": 50,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 150,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "opacity",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 4,
+                    "showPoints": "auto",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -4513,6 +5397,320 @@
                       {
                         "value": 0,
                         "color": "blue"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-50": {
+        "kind": "Panel",
+        "spec": {
+          "id": 50,
+          "title": "Bandwidth detection over time (local / peer)",
+          "description": "Pola m_llEffBW2Local i m_llEffBW2Peer z próbek health (wartości surowe z API, jednostka nieopisana). Linia ciągła: local, przerywana: peer.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Effective bandwidth (local|peer) \\(API units\\)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/S2S tunnel (.*): Effective bandwidth (local|peer) \\(API units\\)/",
+                      "renamePattern": "$1 $2"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "min",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 2,
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "/peer/"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.lineStyle",
+                        "value": {
+                          "dash": [
+                            8,
+                            6
+                          ],
+                          "fill": "dash"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-51": {
+        "kind": "Panel",
+        "spec": {
+          "id": 51,
+          "title": "Latency now",
+          "description": "Ostatnia wartość latency per tunel. Skala 0–200 ms; zielony poniżej 50 ms, pomarańczowy 50–150 ms, czerwony powyżej.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "alexanderzobnin-zabbix-datasource",
+                      "version": "v0",
+                      "spec": {
+                        "application": {
+                          "filter": ""
+                        },
+                        "countTriggersBy": "",
+                        "evaltype": "0",
+                        "functions": [],
+                        "group": {
+                          "filter": "$Group"
+                        },
+                        "host": {
+                          "filter": "$Hostname"
+                        },
+                        "item": {
+                          "filter": "/^S2S tunnel .*: Latency \\(API units\\)$/"
+                        },
+                        "itemTag": {
+                          "filter": "type: API"
+                        },
+                        "macro": {
+                          "filter": ""
+                        },
+                        "options": {
+                          "count": true,
+                          "disableDataAlignment": false,
+                          "minSeverity": 3,
+                          "showDisabledItems": false,
+                          "skipEmptyValues": false,
+                          "useTrends": "default",
+                          "useZabbixValueMapping": false
+                        },
+                        "proxy": {
+                          "filter": ""
+                        },
+                        "queryType": "0",
+                        "resultFormat": "time_series",
+                        "schema": 12,
+                        "table": {
+                          "skipEmptyValues": false
+                        },
+                        "tags": {
+                          "filter": ""
+                        },
+                        "textFilter": "",
+                        "trigger": {
+                          "filter": ""
+                        },
+                        "triggers": {
+                          "acknowledged": 2
+                        }
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "alexanderzobnin-zabbix-datasource-1",
+                        "grafana.app/export-datasource-name": "zabbix"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "renameByRegex",
+                  "spec": {
+                    "options": {
+                      "regex": "/.*S2S tunnel (.*): Latency \\(API units\\)/",
+                      "renamePattern": "$1"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "bargauge",
+            "version": "",
+            "spec": {
+              "options": {
+                "displayMode": "lcd",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "valueMode": "color"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "ms",
+                  "decimals": 0,
+                  "min": 0,
+                  "max": 200,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "green"
+                      },
+                      {
+                        "value": 50,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 150,
+                        "color": "red"
                       }
                     ]
                   },
@@ -4919,6 +6117,7 @@
         "spec": {
           "id": 9,
           "title": "S2S tunnels down",
+          "description": "Liczba tuneli S2S, których stan zbiorczy (Aggregate state) to DOWN, czyli nie działa żaden aktywny transport. Tunel z częścią transportów w dół (DEGRADED) nie jest liczony.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -4935,7 +6134,7 @@
                         "editorMode": "code",
                         "format": "table",
                         "rawQuery": true,
-                        "rawSql": "select count(*) filter (where val is distinct from 'UP') as \"down\" from (select (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.key_ like 'cgf_vpn.s2s.status%') v"
+                        "rawSql": "select count(*) filter (where upper(val) = 'DOWN') as \"down\" from (select (select ht.value from history_text ht where ht.itemid = i.itemid order by ht.clock desc limit 1) as val from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.key_ like 'cgf_vpn.s2s.aggregate_state%') v"
                       },
                       "labels": {
                         "grafana.app/export-label": "grafana-postgresql-datasource-1",
@@ -5149,10 +6348,10 @@
                         "x": 12,
                         "y": 4,
                         "width": 12,
-                        "height": 7,
+                        "height": 5,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-12"
+                          "name": "panel-41"
                         }
                       }
                     },
@@ -5160,38 +6359,12 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 12,
-                        "y": 11,
-                        "width": 4,
-                        "height": 4,
+                        "y": 9,
+                        "width": 12,
+                        "height": 6,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-13"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 16,
-                        "y": 11,
-                        "width": 4,
-                        "height": 4,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-14"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 20,
-                        "y": 11,
-                        "width": 4,
-                        "height": 4,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-15"
+                          "name": "panel-42"
                         }
                       }
                     }
@@ -5282,7 +6455,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Firewall & VPN",
+              "title": "Firewall",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -5336,7 +6509,7 @@
                         "height": 10,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-26"
+                          "name": "panel-34"
                         }
                       }
                     },
@@ -5345,7 +6518,7 @@
                       "spec": {
                         "x": 0,
                         "y": 20,
-                        "width": 8,
+                        "width": 12,
                         "height": 9,
                         "element": {
                           "kind": "ElementReference",
@@ -5356,26 +6529,40 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 8,
+                        "x": 12,
                         "y": 20,
-                        "width": 8,
+                        "width": 12,
                         "height": 9,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-33"
                         }
                       }
-                    },
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "VPN",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 16,
-                        "y": 20,
-                        "width": 8,
-                        "height": 9,
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 7,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-34"
+                          "name": "panel-12"
                         }
                       }
                     },
@@ -5383,7 +6570,111 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 29,
+                        "y": 7,
+                        "width": 8,
+                        "height": 4,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-13"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 7,
+                        "width": 8,
+                        "height": 4,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-14"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 7,
+                        "width": 8,
+                        "height": 4,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-15"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 11,
+                        "width": 8,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-51"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 11,
+                        "width": 8,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-47"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 11,
+                        "width": 8,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-48"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 16,
+                        "width": 12,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-49"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 16,
+                        "width": 12,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-50"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 25,
                         "width": 12,
                         "height": 9,
                         "element": {
@@ -5396,7 +6687,7 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 12,
-                        "y": 29,
+                        "y": 25,
                         "width": 12,
                         "height": 9,
                         "element": {
@@ -5409,25 +6700,38 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 38,
-                        "width": 10,
-                        "height": 10,
+                        "y": 34,
+                        "width": 8,
+                        "height": 9,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-41"
+                          "name": "panel-43"
                         }
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 10,
-                        "y": 38,
-                        "width": 14,
-                        "height": 10,
+                        "x": 8,
+                        "y": 34,
+                        "width": 8,
+                        "height": 9,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-42"
+                          "name": "panel-44"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 34,
+                        "width": 8,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-45"
                         }
                       }
                     }
@@ -5618,6 +6922,39 @@
           "regexApplyTo": "value",
           "sort": "disabled",
           "definition": "Zabbix - host",
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "Interface",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "label": "Interface",
+          "hide": "dontHide",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana-postgresql-datasource",
+            "version": "v0",
+            "spec": {
+              "__legacyStringValue": "select distinct substring(i.name from '^Interface (.*): ') from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.key_ like 'cgf_if.%' order by 1"
+            },
+            "labels": {
+              "grafana.app/export-label": "grafana-postgresql-datasource-1",
+              "grafana.app/export-datasource-name": "Zabbix-Database"
+            }
+          },
+          "regex": "",
+          "sort": "alphabeticalAsc",
+          "definition": "select distinct substring(i.name from '^Interface (.*): ') from items i join hosts h on h.hostid = i.hostid where h.host in ($Hostname) and h.status = 0 and i.status = 0 and i.flags in (0,4) and i.key_ like 'cgf_if.%' order by 1",
           "options": [],
           "multi": true,
           "includeAll": true,
