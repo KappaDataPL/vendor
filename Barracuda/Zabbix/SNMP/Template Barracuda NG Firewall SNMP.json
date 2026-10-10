@@ -1,0 +1,669 @@
+{
+    "zabbix_export": {
+        "version": "7.4",
+        "template_groups": [
+            {
+                "uuid": "7df96b18c230490a9a0a9e2307226338",
+                "name": "Templates"
+            }
+        ],
+        "templates": [
+            {
+                "uuid": "b4a83510fcaf4cb28cbe504c4e239168",
+                "template": "Template Barracuda NG Firewall SNMP",
+                "name": "Template Barracuda NG Firewall SNMP",
+                "templates": [
+                    {
+                        "name": "Template Module ICMP"
+                    },
+                    {
+                        "name": "Template Module Interfaces Simple SNMP"
+                    }
+                ],
+                "groups": [
+                    {
+                        "name": "Templates"
+                    }
+                ],
+                "items": [
+                    {
+                        "uuid": "98507b6662f249b58c9edeccfe35c969",
+                        "name": "Total Data Throughput mbit/s",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "PHION-MIB::dataThroughput.8.102.119.83.116.97.116.115.0",
+                        "key": "dataThroughputTotal",
+                        "delay": "10s",
+                        "history": "1w",
+                        "value_type": "FLOAT",
+                        "units": "mbit/s",
+                        "preprocessing": [
+                            {
+                                "type": "MULTIPLIER",
+                                "parameters": [
+                                    "1.0E-6"
+                                ]
+                            }
+                        ],
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Firewall"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "95a142b9c9a0433f8dd4dbf8b8e86bf1",
+                        "name": "Number of Firewall Sessions",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "PHION-MIB::firewallSessions.8.102.119.83.116.97.116.115.0",
+                        "key": "firewallSessions",
+                        "delay": "10s",
+                        "history": "1w",
+                        "units": "sessions",
+                        "description": "number of live firewall sessions",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Firewall"
+                            }
+                        ],
+                        "triggers": [
+                            {
+                                "uuid": "f956a4862f61476583ac45a675dca4f4",
+                                "expression": "last(/Template Barracuda NG Firewall SNMP/firewallSessions)>={$NUMBER_FW_SESSIONS}",
+                                "name": "Number of Firewall Sessions reached",
+                                "priority": "HIGH",
+                                "description": "Ilo\u015b\u0107 sesji, limity sterujemy {$NUMBER_FW_SESSIONS}",
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Firewall"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "1f536329db51431f971df4e554dcdb12",
+                        "name": "Firmware-hotfixName",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "PHION-MIB::hotfixName",
+                        "key": "hotfixName",
+                        "delay": "2h",
+                        "history": "1w",
+                        "value_type": "TEXT",
+                        "status": "DISABLED",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "General"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "2f62c265b81f4562a17156476d1a5a65",
+                        "name": "CPU Load Average last minute",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "UCD-SNMP-MIB::laLoad.1",
+                        "key": "loadAverageLast1min",
+                        "history": "1w",
+                        "value_type": "FLOAT",
+                        "units": "load",
+                        "description": "CPU Load Average on Baracuda NG Firewalls over the last minute.",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Processors"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "5fca5be1391f4586af7c314c3236c6a6",
+                        "name": "CPU Load Average last 5 minutes",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "UCD-SNMP-MIB::laLoad.2",
+                        "key": "loadAverageLast5min",
+                        "history": "1w",
+                        "value_type": "FLOAT",
+                        "units": "load",
+                        "description": "CPU Load Average on Baracuda NG Firewalls over the last minute.",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Processors"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "30ee370ab87f410f894f300d70d74480",
+                        "name": "CPU Load Average last 15 minutes",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "UCD-SNMP-MIB::laLoad.3",
+                        "key": "loadAverageLast15min",
+                        "history": "1w",
+                        "value_type": "FLOAT",
+                        "units": "load",
+                        "description": "CPU Load Average on Baracuda NG Firewalls over the last minute.",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Processors"
+                            }
+                        ],
+                        "triggers": [
+                            {
+                                "uuid": "753062315e6c4bcb8fc9b463d2764862",
+                                "expression": "max(/Template Barracuda NG Firewall SNMP/loadAverageLast15min,{$TOTALCPUCORES.DELAY})>{$TOTALCPUCORES}",
+                                "name": "CPU Load Average too high",
+                                "priority": "HIGH",
+                                "description": "Triggers if the CPU Load Average over the last 5 minutes is to high for this hardware model.\nBecause number of cores cannot be determined trough SNMP the value has to be overwritten on the host level.\nDefault {$TOTALCPUCORES} definde in this template is 1.",
+                                "tags": [
+                                    {
+                                        "tag": "Category",
+                                        "value": "Sprz\u0119t"
+                                    },
+                                    {
+                                        "tag": "Subcategory",
+                                        "value": "CPU"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "ec5dfe171ad34c52b35199167668cae2",
+                        "name": "Firewall Throughput packets/sec",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "PHION-MIB::packetThroughput.8.102.119.83.116.97.116.115.0",
+                        "key": "packetThroughput",
+                        "delay": "10s",
+                        "history": "1w",
+                        "units": "pkg/s",
+                        "description": "number of live packets / second",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Firewall"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "32b0ebd0f0d84414ad7e96142ebb6751",
+                        "name": "Firmware-Release",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "PHION-MIB::phionRelease",
+                        "key": "phionRelease",
+                        "delay": "2h",
+                        "history": "1w",
+                        "value_type": "TEXT",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "General"
+                            }
+                        ],
+                        "triggers": [
+                            {
+                                "uuid": "e0c67d1cca0c4b39a81bc6c5f52e1d8d",
+                                "expression": "change(/Template Barracuda NG Firewall SNMP/phionRelease)>0",
+                                "name": "Firmware has been updated",
+                                "priority": "INFO"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "26bb93ca4a994426964311be83db14b7",
+                        "name": "VPN User count",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "PHION-MIB::vpnUsers",
+                        "key": "vpnUsers",
+                        "delay": "5m",
+                        "history": "1w",
+                        "units": "users",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "VPN"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "b98a37f08d1d49e89034dd94f76bd9ea",
+                        "name": "Raw local IPv4 address table",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "walk[.1.3.6.1.2.1.4.20.1.1]",
+                        "key": "raw_cgf_local_ipv4_addresses",
+                        "delay": "1m",
+                        "history": "0",
+                        "value_type": "LOG",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "General"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "ha"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "SNMP"
+                            },
+                            {
+                                "tag": "tag",
+                                "value": "raw"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "a7f6fae9dcc04f2ba2acb8490597585c",
+                        "name": "HA VIP present locally",
+                        "type": "DEPENDENT",
+                        "key": "cgf_ha_vip_present",
+                        "value_type": "UNSIGNED",
+                        "preprocessing": [
+                            {
+                                "type": "JAVASCRIPT",
+                                "parameters": [
+                                    "var vip = '{$CGF.HA.VIP}'; if (!vip || vip === '0.0.0.0') return 1; var oid = '.1.3.6.1.2.1.4.20.1.1.' + vip + ' ='; return value.indexOf(oid) >= 0 ? 1 : 0;"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "raw_cgf_local_ipv4_addresses"
+                        },
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "General"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "ha"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "SNMP"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "3a7394db688a4eafb86f88a62aa22173",
+                        "name": "SNMP agent availability",
+                        "type": "INTERNAL",
+                        "key": "zabbix[host,snmp,available]",
+                        "history": "90d",
+                        "description": "Availability of SNMP checks on the host. The value of this item corresponds to availability icons in the host list.\nPossible value:\n0 - not available\n1 - available\n2 - unknown",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "General"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "health"
+                            }
+                        ],
+                        "triggers": [
+                            {
+                                "uuid": "1b2feea055304753ac0965e9e036a82b",
+                                "expression": "max(/Template Barracuda NG Firewall SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0",
+                                "name": "No SNMP data collection from {$SNMP.TIMEOUT}",
+                                "opdata": "Current state: {ITEM.LASTVALUE1}",
+                                "priority": "HIGH",
+                                "dependencies": [
+                                    {
+                                        "name": "Unavailable by ICMP ping",
+                                        "expression": "max(/Template Barracuda NG Firewall SNMP/icmpping,#3)=0"
+                                    }
+                                ],
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "General"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "health"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "discovery_rules": [
+                    {
+                        "uuid": "ab23f21e723542e2ae6ab350c697d756",
+                        "name": "NG Sensor Discovery",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "discovery[{#SNMPVALUE},PHION-MIB::hwSensorName]",
+                        "key": "boxSensors",
+                        "delay": "1h",
+                        "lifetime": "30d",
+                        "enabled_lifetime_type": "DISABLE_NEVER",
+                        "item_prototypes": [
+                            {
+                                "uuid": "aaf93406f80b4a9583e5fa1e776d29d2",
+                                "name": "Sensor Value {#SNMPVALUE}",
+                                "type": "SNMP_AGENT",
+                                "snmp_oid": "PHION-MIB::hwSensorValue.{#SNMPINDEX}",
+                                "key": "boxSensorValue[{#SNMPVALUE}]",
+                                "delay": "3m",
+                                "history": "1w",
+                                "value_type": "FLOAT",
+                                "units": "C",
+                                "preprocessing": [
+                                    {
+                                        "type": "MULTIPLIER",
+                                        "parameters": [
+                                            "0.001"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "ce756758dbb846a082ca110d9814bfdd",
+                        "name": "NG Service Discovery",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "discovery[{#SNMPVALUE},PHION-MIB::boxServiceName]",
+                        "key": "boxServices",
+                        "delay": "1h",
+                        "lifetime": "30d",
+                        "enabled_lifetime_type": "DISABLE_NEVER",
+                        "item_prototypes": [
+                            {
+                                "uuid": "e99d862092e2471e9092d32422046c45",
+                                "name": "Service State {#SNMPVALUE}",
+                                "type": "SNMP_AGENT",
+                                "snmp_oid": "PHION-MIB::boxServiceState.{#SNMPINDEX}",
+                                "key": "boxServiceState[{#SNMPVALUE}]",
+                                "delay": "3m",
+                                "history": "4d",
+                                "valuemap": {
+                                    "name": "Service state"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Services"
+                                    }
+                                ],
+                                "trigger_prototypes": [
+                                    {
+                                        "uuid": "22dc68e5177b4f59aad759d402af6419",
+                                        "expression": "last(/Template Barracuda NG Firewall SNMP/boxServiceState[{#SNMPVALUE}])<>1",
+                                        "name": "Service {#SNMPVALUE} not running",
+                                        "status": "DISABLED",
+                                        "discover": "NO_DISCOVER",
+                                        "priority": "INFO"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "156ff8660110461784524c087dcf2331",
+                        "name": "NG Disk Space",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "discovery[{#SNMPVALUE},PHION-MIB::partitionName]",
+                        "key": "partitionName",
+                        "delay": "1h",
+                        "lifetime": "1w",
+                        "enabled_lifetime_type": "DISABLE_NEVER",
+                        "item_prototypes": [
+                            {
+                                "uuid": "6596ee5698a7452aa8f094eeb0c62067",
+                                "name": "FS [{#SNMPVALUE}] Space: Used, in %",
+                                "type": "SNMP_AGENT",
+                                "snmp_oid": "PHION-MIB::partitionUsedSpacePercent.{#SNMPINDEX}",
+                                "key": "partitionUsedSpacePercent[{#SNMPINDEX}]",
+                                "value_type": "FLOAT",
+                                "units": "%",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "filesystem",
+                                        "value": "{#SNMPVALUE}"
+                                    }
+                                ],
+                                "trigger_prototypes": [
+                                    {
+                                        "uuid": "eab690bfd088412fae8e04a889862dc4",
+                                        "expression": "last(/Template Barracuda NG Firewall SNMP/partitionUsedSpacePercent[{#SNMPINDEX}])>{$DISK_SPACE_DISASTER}",
+                                        "name": "FS [{#SNMPVALUE}] : Disk space is critically low",
+                                        "priority": "DISASTER",
+                                        "dependencies": [
+                                            {
+                                                "name": "FS [{#SNMPVALUE}] : Disk space is low",
+                                                "expression": "last(/Template Barracuda NG Firewall SNMP/partitionUsedSpacePercent[{#SNMPINDEX}])>{$DISK_SPACE_HIGH}"
+                                            }
+                                        ],
+                                        "tags": [
+                                            {
+                                                "tag": "component",
+                                                "value": "storage"
+                                            },
+                                            {
+                                                "tag": "filesystem",
+                                                "value": "{#SNMPVALUE}"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "uuid": "43669edef4c84bf8a7abcb5f4a9f9786",
+                                        "expression": "last(/Template Barracuda NG Firewall SNMP/partitionUsedSpacePercent[{#SNMPINDEX}])>{$DISK_SPACE_HIGH}",
+                                        "name": "FS [{#SNMPVALUE}] : Disk space is low",
+                                        "priority": "HIGH",
+                                        "tags": [
+                                            {
+                                                "tag": "component",
+                                                "value": "storage"
+                                            },
+                                            {
+                                                "tag": "filesystem",
+                                                "value": "{#SNMPVALUE}"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "23ff204f43b842b188739c7115cb3ac0",
+                        "name": "NG Server-Service Discovery",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "discovery[{#SNMPVALUE},PHION-MIB::serverServiceName]",
+                        "key": "serverService",
+                        "delay": "1h",
+                        "lifetime": "30d",
+                        "enabled_lifetime_type": "DISABLE_NEVER",
+                        "item_prototypes": [
+                            {
+                                "uuid": "ef36cbe1054c4a258954ff30ba611d28",
+                                "name": "Service State {#SNMPVALUE}",
+                                "type": "SNMP_AGENT",
+                                "snmp_oid": "PHION-MIB::serverServiceState.{#SNMPINDEX}",
+                                "key": "serverServiceState[{#SNMPVALUE}]",
+                                "delay": "3m",
+                                "history": "1w",
+                                "valuemap": {
+                                    "name": "Service state"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Services"
+                                    }
+                                ],
+                                "trigger_prototypes": [
+                                    {
+                                        "uuid": "25be1239755e4b68a3fcf426588093f9",
+                                        "expression": "last(/Template Barracuda NG Firewall SNMP/cgf_ha_vip_present)=1 and last(/Template Barracuda NG Firewall SNMP/serverServiceState[{#SNMPVALUE}])<>1",
+                                        "name": "Service {#SNMPVALUE} not running",
+                                        "priority": "HIGH"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "c1ae0426397a468e8fc8aaa9301395c2",
+                        "name": "NG VPN Discovery",
+                        "type": "SNMP_AGENT",
+                        "snmp_oid": "discovery[{#SNMPVALUE},PHION-MIB::vpnName]",
+                        "key": "vpncfg",
+                        "delay": "1h",
+                        "filter": {
+                            "evaltype": "AND",
+                            "conditions": [
+                                {
+                                    "macro": "{#SNMPVALUE}",
+                                    "value": "{$CGF.NET.IF.IFNAME.MATCHES}"
+                                },
+                                {
+                                    "macro": "{#SNMPVALUE}",
+                                    "value": "{$CGF.NET.IF.IFNAME.NOT_MATCHES}",
+                                    "operator": "NOT_MATCHES_REGEX"
+                                }
+                            ]
+                        },
+                        "lifetime": "1w",
+                        "enabled_lifetime_type": "DISABLE_NEVER",
+                        "item_prototypes": [
+                            {
+                                "uuid": "4a0415a8da384e2cbcfeff20749e6986",
+                                "name": "VPN State {#SNMPVALUE}",
+                                "type": "SNMP_AGENT",
+                                "snmp_oid": "PHION-MIB::vpnState.{#SNMPINDEX}",
+                                "key": "vpnState[{#SNMPINDEX}]",
+                                "delay": "30s",
+                                "history": "1w",
+                                "value_type": "FLOAT",
+                                "valuemap": {
+                                    "name": "VPN State"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Availability"
+                                    },
+                                    {
+                                        "tag": "Application",
+                                        "value": "VPN"
+                                    }
+                                ],
+                                "trigger_prototypes": [
+                                    {
+                                        "uuid": "28ba392bae8640c8962d749240141c85",
+                                        "expression": "last(/Template Barracuda NG Firewall SNMP/cgf_ha_vip_present)=1 and last(/Template Barracuda NG Firewall SNMP/vpnState[{#SNMPINDEX}])=-1",
+                                        "name": "VPN {#SNMPVALUE} down!",
+                                        "priority": "WARNING"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "tags": [
+                    {
+                        "tag": "Vendor",
+                        "value": "Barracuda CloudGen Firewall"
+                    }
+                ],
+                "macros": [
+                    {
+                        "macro": "{$CGF.NET.IF.IFNAME.MATCHES}",
+                        "value": "^.*$"
+                    },
+                    {
+                        "macro": "{$CGF.NET.IF.IFNAME.NOT_MATCHES}",
+                        "value": "(^PGRP-.*|^IGRP-.*)"
+                    },
+                    {
+                        "macro": "{$DISK_SPACE_DISASTER}",
+                        "value": "90"
+                    },
+                    {
+                        "macro": "{$DISK_SPACE_HIGH}",
+                        "value": "80"
+                    },
+                    {
+                        "macro": "{$NUMBER_FW_SESSIONS}",
+                        "value": "65536",
+                        "description": "Number of Firewall Sessions"
+                    },
+                    {
+                        "macro": "{$SNMP.TIMEOUT}",
+                        "value": "5m"
+                    },
+                    {
+                        "macro": "{$CGF.HA.VIP}",
+                        "value": "0.0.0.0",
+                        "description": "Floating IPv4 address assigned only to the active HA member; leave 0.0.0.0 for standalone hosts"
+                    },
+                    {
+                        "macro": "{$TOTALCPUCORES}",
+                        "value": "2",
+                        "description": "Change to the number of cores you have"
+                    },
+                    {
+                        "macro": "{$TOTALCPUCORES.DELAY}",
+                        "value": "30m"
+                    }
+                ],
+                "valuemaps": [
+                    {
+                        "uuid": "1c0ea3671bc14a299aa54ff8be321568",
+                        "name": "Service state",
+                        "mappings": [
+                            {
+                                "value": "0",
+                                "newvalue": "down"
+                            },
+                            {
+                                "value": "1",
+                                "newvalue": "up"
+                            },
+                            {
+                                "value": "2",
+                                "newvalue": "block"
+                            },
+                            {
+                                "value": "3",
+                                "newvalue": "wild"
+                            },
+                            {
+                                "value": "4",
+                                "newvalue": "removed"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "a6b434fc0caa4ef698b95c8ac4d25232",
+                        "name": "VPN State",
+                        "mappings": [
+                            {
+                                "value": "-1",
+                                "newvalue": "down"
+                            },
+                            {
+                                "value": "0",
+                                "newvalue": "down-disabled"
+                            },
+                            {
+                                "value": "1",
+                                "newvalue": "active"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
