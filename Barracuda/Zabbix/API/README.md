@@ -4,14 +4,14 @@
 
 ## Monitoring Scope
 
-The template includes 90 static items, five discovery rules, and six graphs. It monitors:
+The template includes 90 static items, six discovery rules, and six graphs. It monitors:
 
 - **Availability and system state:** API response, server, process, disk, system, network, and license states; uptime, hostname, model, release, timezone, and user count.
 - **Resources:** CPU core count and load, memory usage and free memory, root filesystem state and free space, and non-root filesystem usage via discovery.
 - **CGF services and HA:** selected service states, RESTD memory, and HA state, role, and node activity.
 - **Networking:** interface traffic, packets, errors, link state, speed, duplex, and negotiation. Interfaces are discovered dynamically.
 - **Firewall:** traffic and packet rates for forward, local, loopback, and QoS bands 0-7.
-- **VPN:** site-to-site tunnel inventory, state and properties, tunnel health samples, and 24-hour accounting statistics.
+- **VPN:** site-to-site tunnel inventory, state and properties, tunnel health samples, logical tunnel-family thread counts and aggregate state, and 24-hour accounting statistics.
 - **Management sessions:** active management session count.
 - **Licensing and subscriptions:** discovered license and security subscription state, status, and expiry warnings.
 
@@ -106,7 +106,7 @@ QoS bands have byte-rate and packet-rate items for each band from 0 through 7. T
 The template also creates discovery items for non-root filesystems, license objects, and security subscriptions:
 
 - **Non-root filesystem discovery** adds state, free-space, and low-free-space trigger prototypes using `{$CGF.DISK.FREE.MIN}`.
-- **License discovery** adds per-license state, status, and days-until-expiry items with an expiry trigger using `{$CGF.EXPIRY.WARN.DAYS}`.
+- **License discovery** adds state, status, and days-until-expiry items for each license/module pair, with an expiry trigger using `{$CGF.EXPIRY.WARN.DAYS}`.
 - **Security subscription discovery** adds per-subscription state, status, and days-until-expiry items with the same expiry warning threshold.
 
 ### VPN
@@ -136,10 +136,12 @@ The **Network interface discovery** rule creates the following 10 items for each
 | Link negotiation | `cgf_if.negotiation["{#IFNAME}"]` |
 | Interface type | `cgf_if.medium["{#IFNAME}"]` |
 
-The **Site-to-site VPN tunnel discovery** rule filters tunnels using `{$CGF.VPN.S2S.TYPE.MATCHES}` and creates the following 23 items for each matching tunnel. `{#TUNNEL}` and `{#TUNNEL_NAME}` are replaced with tunnel values:
+The **Site-to-site VPN tunnel discovery** rule filters tunnels using `{$CGF.VPN.S2S.TYPE.MATCHES}` and creates the following 25 items for each matching tunnel. `{#TUNNEL}` and `{#TUNNEL_NAME}` are replaced with tunnel values:
 
 | Item | Klucz prototypu |
 | --- | --- |
+| Raw tunnel details | `raw_cgf_vpn_s2s_details["{#TUNNEL}"]` |
+| Sessions | `cgf_vpn.s2s.sessions["{#TUNNEL}"]` |
 | Status | `cgf_vpn.s2s.status["{#TUNNEL}"]` |
 | Type | `cgf_vpn.s2s.type["{#TUNNEL}"]` |
 | Local address | `cgf_vpn.s2s.local["{#TUNNEL}"]` |
@@ -164,7 +166,16 @@ The **Site-to-site VPN tunnel discovery** rule filters tunnels using `{$CGF.VPN.
 | Latest sample drops peer | `cgf_vpn.s2s.health.drops_peer["{#TUNNEL}"]` |
 | Latest sample drops peer ND | `cgf_vpn.s2s.health.drops_peer_nd["{#TUNNEL}"]` |
 
-Interface discovery also adds a link-state trigger and traffic graph. Tunnel discovery adds a tunnel-availability trigger and effective-bandwidth graph.
+The **Site-to-site VPN tunnel family discovery** rule groups tunnel records by removing a trailing numeric thread suffix from `internal_name` (for example, `branch:1` and `branch:2` belong to the `branch` family). For each family it creates four items:
+
+| Item | Klucz prototypu |
+| --- | --- |
+| Threads total (excluding passive) | `cgf_vpn.s2s.threads_total["{#TUNNEL}"]` |
+| Threads active | `cgf_vpn.s2s.threads_active["{#TUNNEL}"]` |
+| Threads passive | `cgf_vpn.s2s.threads_passive["{#TUNNEL}"]` |
+| Aggregate state | `cgf_vpn.s2s.aggregate_state["{#TUNNEL}"]` |
+
+Aggregate state is `UP` when all non-passive threads are up, `DEGRADED` when only some are up, `DOWN` when none are up, or `PASSIVE` when the family has only passive threads. Family discovery adds an average-priority trigger when some threads are down and a high-priority trigger when all non-passive threads are down. The per-tunnel availability trigger ignores `DOWN (PASSIVE)` and uses warning priority. Interface discovery also adds a link-state trigger and traffic graph; tunnel discovery adds an effective-bandwidth graph.
 
 ## Import and Configuration
 
@@ -194,7 +205,7 @@ Available graphs cover CPU load, memory usage, free space on `/`, firewall traff
 ## Pre-production Checks
 
 - **Explicit CPU value types:** `cgf_cpu_usage`, `cpu.usage.avg5m`, and `cpu.usage.avg15m` have no `value_type` field in the export. Test the import on the target Zabbix version and set a numeric type if Zabbix does not supply one.
-- **VPN health metric interpretation:** items named `Latest sample` use JSONPath wildcards over `TunnelHealthSamples[*]` with `sum()`, while latency uses `avg()`. Check the actual API response to confirm the aggregation window and units. The export notes that Swagger does not specify units for latency or effective bandwidth.
+- **VPN health metric interpretation:** items named `Latest sample` select `TunnelHealthSampleValues[0]` from each entry in `TunnelHealthSamples[*]` and aggregate values with `sum()`; latency uses `avg()`. Confirm that index `0` represents the intended sample in the API response, and verify the aggregation window and units. The export notes that Swagger does not specify units for latency or effective bandwidth.
 - **Optional QoS data:** missing QoS bands 0-7 are converted to `0`. Distinguish an absent field from actual zero traffic when reading graphs.
 - **Interface counter resets:** traffic, packet, and error counters are converted to per-second rates using `CHANGE_PER_SECOND`. Check initial values and possible spikes after a device restart or counter reset.
 - **Tunnel filter:** the default regular expression relies on the tunnel type returned by the API. Confirm that it includes the intended site-to-site tunnels and excludes client tunnels.
