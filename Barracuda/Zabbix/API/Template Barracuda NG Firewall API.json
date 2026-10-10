@@ -4182,15 +4182,15 @@
                         "item_prototypes": [
                             {
                                 "uuid": "0bad83fd60ba4bb7a4054179ca2ea699",
-                                "name": "License {#LICENSE}: State",
+                                "name": "License {#LICENSE} [{#MODULE}]: State",
                                 "type": "DEPENDENT",
-                                "key": "cgf_license.state[\"{#LICENSE}\"]",
+                                "key": "cgf_license.state[\"{#LICENSE}:{#MODULE}\"]",
                                 "value_type": "TEXT",
                                 "preprocessing": [
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.licenses[?(@.license == '{#LICENSE}')].state.first()"
+                                            "$.body.licenses[?(@.license == '{#LICENSE}' && @.module == '{#MODULE}')].state.first()"
                                         ]
                                     }
                                 ],
@@ -4218,15 +4218,15 @@
                             },
                             {
                                 "uuid": "b96df3e8387e4d7e95ffa27877dbf042",
-                                "name": "License {#LICENSE}: Status",
+                                "name": "License {#LICENSE} [{#MODULE}]: Status",
                                 "type": "DEPENDENT",
-                                "key": "cgf_license.status[\"{#LICENSE}\"]",
+                                "key": "cgf_license.status[\"{#LICENSE}:{#MODULE}\"]",
                                 "value_type": "TEXT",
                                 "preprocessing": [
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.licenses[?(@.license == '{#LICENSE}')].status.first()"
+                                            "$.body.licenses[?(@.license == '{#LICENSE}' && @.module == '{#MODULE}')].status.first()"
                                         ]
                                     }
                                 ],
@@ -4254,16 +4254,16 @@
                             },
                             {
                                 "uuid": "8f08e462e91c48d2a4e6a9bc8eabd7bd",
-                                "name": "License {#LICENSE}: Days until expiry",
+                                "name": "License {#LICENSE} [{#MODULE}]: Days until expiry",
                                 "type": "DEPENDENT",
-                                "key": "cgf_license.expires_days[\"{#LICENSE}\"]",
+                                "key": "cgf_license.expires_days[\"{#LICENSE}:{#MODULE}\"]",
                                 "value_type": "FLOAT",
                                 "units": "d",
                                 "preprocessing": [
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.licenses[?(@.license == '{#LICENSE}')].expires.first()"
+                                            "$.body.licenses[?(@.license == '{#LICENSE}' && @.module == '{#MODULE}')].expires.first()"
                                         ]
                                     },
                                     {
@@ -4300,8 +4300,8 @@
                         "trigger_prototypes": [
                             {
                                 "uuid": "ef6e07e7e3af47848364bf85d304fe3b",
-                                "expression": "last(/Template Barracuda NG Firewall API/cgf_license.expires_days[\"{#LICENSE}\"])<{$CGF.EXPIRY.WARN.DAYS}",
-                                "name": "License {#LICENSE}: Expiring or expired",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_license.expires_days[\"{#LICENSE}:{#MODULE}\"])<{$CGF.EXPIRY.WARN.DAYS}",
+                                "name": "License {#LICENSE} [{#MODULE}]: Expiring or expired",
                                 "priority": "WARNING",
                                 "tags": [
                                     {
@@ -4938,7 +4938,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_llLatency.avg()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_llLatency.avg()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4976,7 +4976,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_llEffBW2Local.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_llEffBW2Local.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5014,7 +5014,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_llEffBW2Peer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_llEffBW2Peer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5052,7 +5052,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesLocal.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iBytesLocal.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5090,7 +5090,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesLocalND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iBytesLocalND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5128,7 +5128,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsLocal.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iPktsLocal.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5166,7 +5166,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsLocalND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iPktsLocalND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5204,7 +5204,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsLocal.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iDropsLocal.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5242,7 +5242,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsLocalND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iDropsLocalND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5280,7 +5280,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesPeer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iBytesPeer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5318,7 +5318,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesPeerND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iBytesPeerND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5356,7 +5356,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsPeer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iPktsPeer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5394,7 +5394,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsPeerND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iPktsPeerND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5432,7 +5432,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsPeer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iDropsPeer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5470,7 +5470,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsPeerND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[0].m_iDropsPeerND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -5502,9 +5502,9 @@
                         "trigger_prototypes": [
                             {
                                 "uuid": "d2300305f7bd412c9fcfadcf83f51d46",
-                                "expression": "(nodata(/Template Barracuda NG Firewall API/cgf_ha_box_state,15m)=1 or last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"\" or ((last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"primary\" and last(/Template Barracuda NG Firewall API/cgf_ha_primary_active)=1) or (last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"secondary\" and last(/Template Barracuda NG Firewall API/cgf_ha_secondary_active)=1))) and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.status[\"{#TUNNEL}\"])<>\"UP\"",
+                                "expression": "(nodata(/Template Barracuda NG Firewall API/cgf_ha_box_state,15m)=1 or last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"\" or ((last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"primary\" and last(/Template Barracuda NG Firewall API/cgf_ha_primary_active)=1) or (last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"secondary\" and last(/Template Barracuda NG Firewall API/cgf_ha_secondary_active)=1))) and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.status[\"{#TUNNEL}\"])<>\"UP\" and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.status[\"{#TUNNEL}\"])<>\"DOWN (PASSIVE)\"",
                                 "name": "S2S tunnel {#TUNNEL_NAME}: Tunnel is not UP",
-                                "priority": "HIGH",
+                                "priority": "WARNING",
                                 "tags": [
                                     {
                                         "tag": "component",
@@ -5552,6 +5552,237 @@
                                             "host": "Template Barracuda NG Firewall API",
                                             "key": "cgf_vpn.s2s.health.effective_bw_peer_raw[\"{#TUNNEL}\"]"
                                         }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "baa606fd9fee4c409f18cd21c7aed946",
+                        "name": "Site-to-site VPN tunnel family discovery",
+                        "type": "DEPENDENT",
+                        "key": "cgf_vpn.s2s.family.discovery",
+                        "master_item": {
+                            "key": "raw_cgf_vpn_tunnels"
+                        },
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.body.VPNTunnels"
+                                ]
+                            },
+                            {
+                                "type": "JAVASCRIPT",
+                                "parameters": [
+                                    "var rows = []; var seen = {}; var data = JSON.parse(value); if (!Array.isArray(data)) return JSON.stringify([]); data.forEach(function (item) { var rawName = (item && item.internal_name) ? String(item.internal_name) : ''; var family = rawName.replace(/:\\d+$/, ''); if (!family) return; if (!seen[family]) { seen[family] = { internal_name: family, name: family, type: (item && item.type) ? String(item.type) : '' }; rows.push(seen[family]); } var st = (item.status || '').toString().toUpperCase(); if (!seen[family].statusSummary) seen[family].statusSummary = { total: 0, up: 0, passive: 0 }; seen[family].statusSummary.total += 1; if (st === 'UP') seen[family].statusSummary.up += 1; if (st.indexOf('PASSIVE') !== -1) seen[family].statusSummary.passive += 1; }); return JSON.stringify(rows);"
+                                ]
+                            }
+                        ],
+                        "lld_macro_paths": [
+                            {
+                                "lld_macro": "{#TUNNEL}",
+                                "path": "$.internal_name"
+                            },
+                            {
+                                "lld_macro": "{#TUNNEL_NAME}",
+                                "path": "$.name"
+                            },
+                            {
+                                "lld_macro": "{#TUNNEL_TYPE}",
+                                "path": "$.type"
+                            }
+                        ],
+                        "filter": {
+                            "evaltype": "AND",
+                            "conditions": [
+                                {
+                                    "macro": "{#TUNNEL_TYPE}",
+                                    "value": "{$CGF.VPN.S2S.TYPE.MATCHES}",
+                                    "operator": "MATCHES_REGEX"
+                                }
+                            ]
+                        },
+                        "item_prototypes": [
+                            {
+                                "uuid": "8b7a7104b66c40f6a0be7e2a7562457a",
+                                "name": "S2S tunnel family {#TUNNEL_NAME}: Threads total (excluding passive)",
+                                "type": "DEPENDENT",
+                                "key": "cgf_vpn.s2s.threads_total[\"{#TUNNEL}\"]",
+                                "value_type": "UNSIGNED",
+                                "preprocessing": [
+                                    {
+                                        "type": "JAVASCRIPT",
+                                        "parameters": [
+                                            "var root = JSON.parse(value); var data = Array.isArray(root) ? root : (root && root.body && Array.isArray(root.body.VPNTunnels) ? root.body.VPNTunnels : (root && Array.isArray(root.VPNTunnels) ? root.VPNTunnels : [])); var family = '{#TUNNEL}'; var total = 0; data.forEach(function (item) { var name = (item && item.internal_name) ? String(item.internal_name) : ''; var status = (item && item.status) ? String(item.status).toUpperCase() : ''; if ((name === family || name.indexOf(family + ':') === 0) && status.indexOf('PASSIVE') === -1) total += 1; }); return total;"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_vpn_tunnels"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "tunnel",
+                                        "value": "{#TUNNEL_NAME}"
+                                    }
+                                ],
+                                "description": "Number of non-passive VPN tunnel threads in the same logical tunnel family."
+                            },
+                            {
+                                "uuid": "2ac3706163274af4966e4dbcf2f8129d",
+                                "name": "S2S tunnel family {#TUNNEL_NAME}: Threads active",
+                                "type": "DEPENDENT",
+                                "key": "cgf_vpn.s2s.threads_active[\"{#TUNNEL}\"]",
+                                "value_type": "UNSIGNED",
+                                "preprocessing": [
+                                    {
+                                        "type": "JAVASCRIPT",
+                                        "parameters": [
+                                            "var root = JSON.parse(value); var data = Array.isArray(root) ? root : (root && root.body && Array.isArray(root.body.VPNTunnels) ? root.body.VPNTunnels : (root && Array.isArray(root.VPNTunnels) ? root.VPNTunnels : [])); var family = '{#TUNNEL}'; var active = 0; data.forEach(function (item) { var name = (item && item.internal_name) ? String(item.internal_name) : ''; var status = (item && item.status) ? String(item.status).toUpperCase() : ''; if ((name === family || name.indexOf(family + ':') === 0) && status === 'UP') active += 1; }); return active;"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_vpn_tunnels"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "tunnel",
+                                        "value": "{#TUNNEL_NAME}"
+                                    }
+                                ],
+                                "description": "Number of active VPN tunnel threads in the same logical tunnel family."
+                            },
+                            {
+                                "uuid": "b83dab4f4f5947d5a499270e2f6e4b0d",
+                                "name": "S2S tunnel family {#TUNNEL_NAME}: Threads passive",
+                                "type": "DEPENDENT",
+                                "key": "cgf_vpn.s2s.threads_passive[\"{#TUNNEL}\"]",
+                                "value_type": "UNSIGNED",
+                                "preprocessing": [
+                                    {
+                                        "type": "JAVASCRIPT",
+                                        "parameters": [
+                                            "var root = JSON.parse(value); var data = Array.isArray(root) ? root : (root && root.body && Array.isArray(root.body.VPNTunnels) ? root.body.VPNTunnels : (root && Array.isArray(root.VPNTunnels) ? root.VPNTunnels : [])); var family = '{#TUNNEL}'; var passive = 0; data.forEach(function (item) { var name = (item && item.internal_name) ? String(item.internal_name) : ''; var status = (item && item.status) ? String(item.status).toUpperCase() : ''; if ((name === family || name.indexOf(family + ':') === 0) && status.indexOf('PASSIVE') !== -1) passive += 1; }); return passive;"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_vpn_tunnels"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "tunnel",
+                                        "value": "{#TUNNEL_NAME}"
+                                    }
+                                ],
+                                "description": "Number of passive VPN tunnel threads in the same logical tunnel family."
+                            },
+                            {
+                                "uuid": "72693bbb97aa486c9402c2f8de5e02ec",
+                                "name": "S2S tunnel family {#TUNNEL_NAME}: Aggregate state",
+                                "type": "DEPENDENT",
+                                "key": "cgf_vpn.s2s.aggregate_state[\"{#TUNNEL}\"]",
+                                "value_type": "TEXT",
+                                "preprocessing": [
+                                    {
+                                        "type": "JAVASCRIPT",
+                                        "parameters": [
+                                            "var root = JSON.parse(value); var data = Array.isArray(root) ? root : (root && root.body && Array.isArray(root.body.VPNTunnels) ? root.body.VPNTunnels : (root && Array.isArray(root.VPNTunnels) ? root.VPNTunnels : [])); var family = '{#TUNNEL}'; var total = 0; var active = 0; var passive = 0; data.forEach(function (item) { var name = (item && item.internal_name) ? String(item.internal_name) : ''; var status = (item && item.status) ? String(item.status).toUpperCase() : ''; if (name === family || name.indexOf(family + ':') === 0) { if (status.indexOf('PASSIVE') !== -1) passive += 1; else { total += 1; if (status === 'UP') active += 1; } } }); if (total === 0 && passive > 0) return 'PASSIVE'; if (active === 0 && total > 0) return 'DOWN'; if (active > 0 && active < total) return 'DEGRADED'; if (active === total && total > 0) return 'UP'; return 'unknown';"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_vpn_tunnels"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "tunnel",
+                                        "value": "{#TUNNEL_NAME}"
+                                    }
+                                ],
+                                "description": "Aggregated tunnel state for family-level alerting across multiple VPN threads."
+                            }
+                        ],
+                        "trigger_prototypes": [
+                            {
+                                "uuid": "6724f03f737a4e5b93b8e007c4a7f803",
+                                "expression": "(nodata(/Template Barracuda NG Firewall API/cgf_ha_box_state,15m)=1 or last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"\" or ((last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"primary\" and last(/Template Barracuda NG Firewall API/cgf_ha_primary_active)=1) or (last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"secondary\" and last(/Template Barracuda NG Firewall API/cgf_ha_secondary_active)=1))) and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.threads_active[\"{#TUNNEL}\"])<last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.threads_total[\"{#TUNNEL}\"]) and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.threads_active[\"{#TUNNEL}\"])>0",
+                                "name": "S2S tunnel family {#TUNNEL_NAME}: One or more threads are down",
+                                "priority": "AVERAGE",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "scope",
+                                        "value": "availability"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "3d82f90fc14248c2b4edfe55100621e1",
+                                "expression": "(nodata(/Template Barracuda NG Firewall API/cgf_ha_box_state,15m)=1 or last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"\" or ((last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"primary\" and last(/Template Barracuda NG Firewall API/cgf_ha_primary_active)=1) or (last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"secondary\" and last(/Template Barracuda NG Firewall API/cgf_ha_secondary_active)=1))) and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.threads_active[\"{#TUNNEL}\"])=0 and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.threads_total[\"{#TUNNEL}\"])>0",
+                                "name": "S2S tunnel family {#TUNNEL_NAME}: Tunnel family is completely down",
+                                "priority": "HIGH",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "scope",
+                                        "value": "availability"
                                     }
                                 ]
                             }
