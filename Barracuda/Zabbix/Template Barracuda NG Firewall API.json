@@ -1273,12 +1273,18 @@
                         "name": "HA primary active",
                         "type": "DEPENDENT",
                         "key": "cgf_ha_primary_active",
-                        "value_type": "FLOAT",
+                        "value_type": "UNSIGNED",
                         "preprocessing": [
                             {
                                 "type": "JSONPATH",
                                 "parameters": [
                                     "$.body.primary.active"
+                                ]
+                            },
+                            {
+                                "type": "JAVASCRIPT",
+                                "parameters": [
+                                    "return String(value).toLowerCase() === 'true' ? 1 : 0;"
                                 ]
                             }
                         ],
@@ -1305,12 +1311,18 @@
                         "name": "HA secondary active",
                         "type": "DEPENDENT",
                         "key": "cgf_ha_secondary_active",
-                        "value_type": "FLOAT",
+                        "value_type": "UNSIGNED",
                         "preprocessing": [
                             {
                                 "type": "JSONPATH",
                                 "parameters": [
                                     "$.body.secondary.active"
+                                ]
+                            },
+                            {
+                                "type": "JAVASCRIPT",
+                                "parameters": [
+                                    "return String(value).toLowerCase() === 'true' ? 1 : 0;"
                                 ]
                             }
                         ],
@@ -4018,7 +4030,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_llLatency.avg()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_llLatency.avg()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4056,7 +4068,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_llEffBW2Local.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_llEffBW2Local.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4094,7 +4106,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_llEffBW2Peer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_llEffBW2Peer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4132,7 +4144,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iBytesLocal.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesLocal.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4170,7 +4182,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iBytesLocalND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesLocalND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4208,7 +4220,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iPktsLocal.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsLocal.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4246,7 +4258,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iPktsLocalND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsLocalND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4284,7 +4296,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iDropsLocal.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsLocal.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4322,7 +4334,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iDropsLocalND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsLocalND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4360,7 +4372,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iBytesPeer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesPeer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4398,7 +4410,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iBytesPeerND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iBytesPeerND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4436,7 +4448,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iPktsPeer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsPeer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4474,7 +4486,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iPktsPeerND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iPktsPeerND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4512,7 +4524,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iDropsPeer.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsPeer.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4550,7 +4562,7 @@
                                     {
                                         "type": "JSONPATH",
                                         "parameters": [
-                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues.last().m_iDropsPeerND.sum()"
+                                            "$.body.TunnelHealthSamples[*].TunnelHealthSampleValues[-1].m_iDropsPeerND.sum()"
                                         ],
                                         "error_handler": "DISCARD_VALUE"
                                     }
@@ -4582,7 +4594,7 @@
                         "trigger_prototypes": [
                             {
                                 "uuid": "d2300305f7bd412c9fcfadcf83f51d46",
-                                "expression": "last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.status[\"{#TUNNEL}\"])<>\"UP\"",
+                                "expression": "(nodata(/Template Barracuda NG Firewall API/cgf_ha_box_state,15m)=1 or last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"\" or ((last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"primary\" and last(/Template Barracuda NG Firewall API/cgf_ha_primary_active)=1) or (last(/Template Barracuda NG Firewall API/cgf_ha_box_state)=\"secondary\" and last(/Template Barracuda NG Firewall API/cgf_ha_secondary_active)=1))) and last(/Template Barracuda NG Firewall API/cgf_vpn.s2s.status[\"{#TUNNEL}\"])<>\"UP\"",
                                 "name": "S2S tunnel {#TUNNEL_NAME}: Tunnel is not UP",
                                 "priority": "HIGH",
                                 "tags": [
