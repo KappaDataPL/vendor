@@ -1246,7 +1246,7 @@
                             {
                                 "type": "JSONPATH",
                                 "parameters": [
-                                    "$.boxState"
+                                    "$.body.boxState"
                                 ]
                             }
                         ],
@@ -1278,7 +1278,7 @@
                             {
                                 "type": "JSONPATH",
                                 "parameters": [
-                                    "$.primary.active"
+                                    "$.body.primary.active"
                                 ]
                             }
                         ],
@@ -1310,7 +1310,7 @@
                             {
                                 "type": "JSONPATH",
                                 "parameters": [
-                                    "$.secondary.active"
+                                    "$.body.secondary.active"
                                 ]
                             }
                         ],
@@ -1342,7 +1342,7 @@
                             {
                                 "type": "JSONPATH",
                                 "parameters": [
-                                    "$.status"
+                                    "$.body.status"
                                 ]
                             }
                         ],
