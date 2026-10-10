@@ -2048,7 +2048,7 @@
                             },
                             {
                                 "name": "count",
-                                "value": "1"
+                                "value": "1000"
                             },
                             {
                                 "name": "forward",
@@ -2103,6 +2103,93 @@
                             {
                                 "tag": "tag",
                                 "value": "raw"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "e17a5a7545484b25b3191c274e37a501",
+                        "name": "Firewall sessions total",
+                        "type": "DEPENDENT",
+                        "key": "cgf_fw.connections.total",
+                        "value_type": "UNSIGNED",
+                        "units": "sessions",
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.body.total"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "raw_cgf_fw_live"
+                        },
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "firewall"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            }
+                        ],
+                        "description": "Total number of firewall connections reported by the live endpoint. The count query limits the returned connection list, not this total field."
+                    },
+                    {
+                        "uuid": "7c77d280399f494483c8739298827a80",
+                        "name": "Firewall connection list truncated",
+                        "type": "DEPENDENT",
+                        "key": "cgf_fw.connections.limited",
+                        "value_type": "UNSIGNED",
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.body.limited"
+                                ]
+                            },
+                            {
+                                "type": "JAVASCRIPT",
+                                "parameters": [
+                                    "return String(value).toLowerCase() === 'true' ? 1 : 0;"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "raw_cgf_fw_live"
+                        },
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "firewall"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            }
+                        ],
+                        "description": "1 means the API truncated the connection list at count=1000; the reported total may then be capped.",
+                        "triggers": [
+                            {
+                                "uuid": "958fe3aaeea64e9b8d86d172b8487381",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_fw.connections.limited)=1",
+                                "name": "Firewall connection total may be capped by API limit",
+                                "priority": "WARNING",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "firewall"
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -2865,6 +2952,54 @@
                         "units": "pps"
                     },
                     {
+                        "uuid": "61d993ea7d744f8b8c34a8c7e2731548",
+                        "name": "Firewall total throughput: packets per second",
+                        "type": "CALCULATED",
+                        "key": "cgf_fw.traffic.total.packets",
+                        "value_type": "FLOAT",
+                        "units": "pps",
+                        "params": "last(//cgf_fw.traffic.forward.packets)+last(//cgf_fw.traffic.local.packets)+last(//cgf_fw.traffic.loopback.packets)",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "firewall"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            }
+                        ],
+                        "description": "Sum of forwarded, local, and loopback packet rates; QoS bands are excluded to avoid double counting."
+                    },
+                    {
+                        "uuid": "f62118442c534c31a6ad3646b1202cf5",
+                        "name": "Firewall total data throughput",
+                        "type": "CALCULATED",
+                        "key": "cgf_fw.traffic.total.mbps",
+                        "value_type": "FLOAT",
+                        "units": "Mbit/s",
+                        "params": "(last(//cgf_fw.traffic.forward.bps)+last(//cgf_fw.traffic.local.bps)+last(//cgf_fw.traffic.loopback.bps))*8/1000000",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "firewall"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            }
+                        ],
+                        "description": "Sum of forwarded, local, and loopback byte rates converted to Mbit/s; QoS bands are excluded to avoid double counting."
+                    },
+                    {
                         "uuid": "9728e6a24e714eec806ea352596fc6ac",
                         "name": "Raw active management sessions",
                         "type": "HTTP_AGENT",
@@ -3111,6 +3246,180 @@
                         "units": "sessions"
                     },
                     {
+                        "uuid": "3b722a8ca9d642c0a33a8cd90c3ae86c",
+                        "name": "Raw VPN user connections (5m)",
+                        "type": "HTTP_AGENT",
+                        "key": "raw_cgf_vpn_user_connections",
+                        "value_type": "LOG",
+                        "delay": "5m",
+                        "url": "{$API_URL}/rest/vpn/v1/tunnels/users/connections",
+                        "query_fields": [
+                            {
+                                "name": "envelope",
+                                "value": "false"
+                            },
+                            {
+                                "name": "time",
+                                "value": "300"
+                            }
+                        ],
+                        "headers": [
+                            {
+                                "name": "accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-API-Token",
+                                "value": "{$API_AUTH}"
+                            }
+                        ],
+                        "output_format": "JSON",
+                        "history": "0",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "vpn"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            },
+                            {
+                                "tag": "tag",
+                                "value": "raw"
+                            }
+                        ],
+                        "description": "Returns user connection records seen during the preceding 300 seconds. This is a time-window count, not a guaranteed instantaneous active-user count."
+                    },
+                    {
+                        "uuid": "7e1879eb8e994c62ab0dc8563411aa2d",
+                        "name": "VPN user connections observed (5m)",
+                        "type": "DEPENDENT",
+                        "key": "cgf_vpn.user.connections.5m",
+                        "value_type": "UNSIGNED",
+                        "units": "connections",
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.body.Users.length()"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "raw_cgf_vpn_user_connections"
+                        },
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "vpn"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            }
+                        ],
+                        "description": "Number of VPN user connection records returned for the preceding 5 minutes; a user may have more than one record."
+                    },
+                    {
+                        "uuid": "4bf1810411904341bf01b2ca7e849756",
+                        "name": "Raw box licenses",
+                        "type": "HTTP_AGENT",
+                        "key": "raw_cgf_box_licenses",
+                        "value_type": "LOG",
+                        "delay": "1h",
+                        "url": "{$API_URL}/rest/control/v1/box/licenses",
+                        "query_fields": [
+                            {
+                                "name": "envelope",
+                                "value": "false"
+                            }
+                        ],
+                        "headers": [
+                            {
+                                "name": "accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-API-Token",
+                                "value": "{$API_AUTH}"
+                            }
+                        ],
+                        "output_format": "JSON",
+                        "history": "0",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "license"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            },
+                            {
+                                "tag": "tag",
+                                "value": "raw"
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "955f62cff30e4305b783d5ed075a73fc",
+                        "name": "Raw security subscriptions",
+                        "type": "HTTP_AGENT",
+                        "key": "raw_cgf_box_securitysubscriptions",
+                        "value_type": "LOG",
+                        "delay": "1h",
+                        "url": "{$API_URL}/rest/control/v1/box/securitysubscriptions",
+                        "query_fields": [
+                            {
+                                "name": "envelope",
+                                "value": "false"
+                            }
+                        ],
+                        "headers": [
+                            {
+                                "name": "accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "X-API-Token",
+                                "value": "{$API_AUTH}"
+                            }
+                        ],
+                        "output_format": "JSON",
+                        "history": "0",
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "license"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            },
+                            {
+                                "tag": "tag",
+                                "value": "raw"
+                            }
+                        ]
+                    },
+                    {
                         "uuid": "897babc059f2487a9d90a78d35048937",
                         "name": "Raw VPN tunnel inventory",
                         "type": "HTTP_AGENT",
@@ -3189,6 +3498,16 @@
                         "macro": "{$CGF.VPN.S2S.TYPE.MATCHES}",
                         "value": "(?i).*(site.*site|s2s).*",
                         "description": "Regex to include site-to-site tunnel types and exclude typical client-to-site tunnel names."
+                    },
+                    {
+                        "macro": "{$CGF.DISK.FREE.MIN}",
+                        "value": "2048000",
+                        "description": "Minimum free space for discovered non-root filesystems in KB."
+                    },
+                    {
+                        "macro": "{$CGF.EXPIRY.WARN.DAYS}",
+                        "value": "30",
+                        "description": "Warning threshold for license and subscription expiry in days."
                     }
                 ],
                 "discovery_rules": [
@@ -3656,6 +3975,507 @@
                         ]
                     },
                     {
+                        "uuid": "b32d8e40fe47427a99f3839c12f56d38",
+                        "name": "Non-root filesystem discovery",
+                        "type": "DEPENDENT",
+                        "key": "cgf_disk.discovery",
+                        "master_item": {
+                            "key": "raw_cgf_box_disks"
+                        },
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.body.disks"
+                                ]
+                            }
+                        ],
+                        "lld_macro_paths": [
+                            {
+                                "lld_macro": "{#MOUNTPOINT}",
+                                "path": "$.mountpoint"
+                            }
+                        ],
+                        "filter": {
+                            "evaltype": "AND",
+                            "conditions": [
+                                {
+                                    "macro": "{#MOUNTPOINT}",
+                                    "value": "^/$",
+                                    "operator": "NOT_MATCHES_REGEX"
+                                }
+                            ]
+                        },
+                        "item_prototypes": [
+                            {
+                                "uuid": "a7e2717b89c24660b02e395643c4a903",
+                                "name": "Filesystem {#MOUNTPOINT}: State",
+                                "type": "DEPENDENT",
+                                "key": "cgf_disk.state[\"{#MOUNTPOINT}\"]",
+                                "value_type": "TEXT",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.disks[?(@.mountpoint == '{#MOUNTPOINT}')].state.first()"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_disks"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "mountpoint",
+                                        "value": "{#MOUNTPOINT}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "00c2b4fd2a0441d0a5f6f254f8086bbb",
+                                "name": "Filesystem {#MOUNTPOINT}: Free space",
+                                "type": "DEPENDENT",
+                                "key": "cgf_disk.free[\"{#MOUNTPOINT}\"]",
+                                "value_type": "UNSIGNED",
+                                "units": "KB",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.disks[?(@.mountpoint == '{#MOUNTPOINT}')].free.first()"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_disks"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "mountpoint",
+                                        "value": "{#MOUNTPOINT}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "a33ddeb1abac42259a44c71ed5f3946c",
+                                "name": "Filesystem {#MOUNTPOINT}: Free inodes",
+                                "type": "DEPENDENT",
+                                "key": "cgf_disk.inodes.free[\"{#MOUNTPOINT}\"]",
+                                "value_type": "UNSIGNED",
+                                "units": "inodes",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.disks[?(@.mountpoint == '{#MOUNTPOINT}')].inodesFree.first()"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_disks"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "mountpoint",
+                                        "value": "{#MOUNTPOINT}"
+                                    }
+                                ]
+                            }
+                        ],
+                        "trigger_prototypes": [
+                            {
+                                "uuid": "51f762caa1614191aa5564694177c951",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.state[\"{#MOUNTPOINT}\"])<>\"ok\"",
+                                "name": "Filesystem {#MOUNTPOINT}: State is not OK",
+                                "priority": "HIGH",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "mountpoint",
+                                        "value": "{#MOUNTPOINT}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "267149982293417ba03a3d5c897a3985",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.free[\"{#MOUNTPOINT}\"])<{$CGF.DISK.FREE.MIN}",
+                                "name": "Filesystem {#MOUNTPOINT}: Free space is low",
+                                "priority": "WARNING",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "mountpoint",
+                                        "value": "{#MOUNTPOINT}"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "ad11b596bfad4c048eeda5755af753a3",
+                        "name": "License discovery",
+                        "type": "DEPENDENT",
+                        "key": "cgf_license.discovery",
+                        "master_item": {
+                            "key": "raw_cgf_box_licenses"
+                        },
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.body.licenses"
+                                ]
+                            }
+                        ],
+                        "lld_macro_paths": [
+                            {
+                                "lld_macro": "{#LICENSE}",
+                                "path": "$.license"
+                            },
+                            {
+                                "lld_macro": "{#MODULE}",
+                                "path": "$.module"
+                            }
+                        ],
+                        "item_prototypes": [
+                            {
+                                "uuid": "0bad83fd60ba4bb7a4054179ca2ea699",
+                                "name": "License {#LICENSE}: State",
+                                "type": "DEPENDENT",
+                                "key": "cgf_license.state[\"{#LICENSE}\"]",
+                                "value_type": "TEXT",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.licenses[?(@.license == '{#LICENSE}')].state.first()"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_licenses"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "module",
+                                        "value": "{#MODULE}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "b96df3e8387e4d7e95ffa27877dbf042",
+                                "name": "License {#LICENSE}: Status",
+                                "type": "DEPENDENT",
+                                "key": "cgf_license.status[\"{#LICENSE}\"]",
+                                "value_type": "TEXT",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.licenses[?(@.license == '{#LICENSE}')].status.first()"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_licenses"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "module",
+                                        "value": "{#MODULE}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "8f08e462e91c48d2a4e6a9bc8eabd7bd",
+                                "name": "License {#LICENSE}: Days until expiry",
+                                "type": "DEPENDENT",
+                                "key": "cgf_license.expires_days[\"{#LICENSE}\"]",
+                                "value_type": "FLOAT",
+                                "units": "d",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.licenses[?(@.license == '{#LICENSE}')].expires.first()"
+                                        ]
+                                    },
+                                    {
+                                        "type": "JAVASCRIPT",
+                                        "parameters": [
+                                            "var expiry = Number(value); return expiry > 0 ? Math.floor((expiry - Date.now() / 1000) / 86400) : 99999;"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_licenses"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "module",
+                                        "value": "{#MODULE}"
+                                    }
+                                ],
+                                "description": "Days until the API-reported Unix expiry timestamp. A timestamp of zero is treated as no expiry."
+                            }
+                        ],
+                        "trigger_prototypes": [
+                            {
+                                "uuid": "ef6e07e7e3af47848364bf85d304fe3b",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_license.expires_days[\"{#LICENSE}\"])<{$CGF.EXPIRY.WARN.DAYS}",
+                                "name": "License {#LICENSE}: Expiring or expired",
+                                "priority": "WARNING",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "module",
+                                        "value": "{#MODULE}"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "uuid": "03b4531fe67248e4833e33a8ebe5fdb0",
+                        "name": "Security subscription discovery",
+                        "type": "DEPENDENT",
+                        "key": "cgf_subscription.discovery",
+                        "master_item": {
+                            "key": "raw_cgf_box_securitysubscriptions"
+                        },
+                        "preprocessing": [
+                            {
+                                "type": "JSONPATH",
+                                "parameters": [
+                                    "$.body.subscriptions"
+                                ]
+                            }
+                        ],
+                        "lld_macro_paths": [
+                            {
+                                "lld_macro": "{#SUBSCRIPTION}",
+                                "path": "$.name"
+                            }
+                        ],
+                        "item_prototypes": [
+                            {
+                                "uuid": "d6e88cb07d5440caa7c221e9aa568c82",
+                                "name": "Subscription {#SUBSCRIPTION}: State",
+                                "type": "DEPENDENT",
+                                "key": "cgf_subscription.state[\"{#SUBSCRIPTION}\"]",
+                                "value_type": "TEXT",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.subscriptions[?(@.name == '{#SUBSCRIPTION}')].state.first()"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_securitysubscriptions"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "subscription",
+                                        "value": "{#SUBSCRIPTION}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "21c911e313e8481996f71832944fe0fb",
+                                "name": "Subscription {#SUBSCRIPTION}: Status",
+                                "type": "DEPENDENT",
+                                "key": "cgf_subscription.status[\"{#SUBSCRIPTION}\"]",
+                                "value_type": "TEXT",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.subscriptions[?(@.name == '{#SUBSCRIPTION}')].status.first()"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_securitysubscriptions"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "subscription",
+                                        "value": "{#SUBSCRIPTION}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "1defe1937c5749c490ef345d3f27099b",
+                                "name": "Subscription {#SUBSCRIPTION}: Days until expiry",
+                                "type": "DEPENDENT",
+                                "key": "cgf_subscription.expires_days[\"{#SUBSCRIPTION}\"]",
+                                "value_type": "FLOAT",
+                                "units": "d",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.subscriptions[?(@.name == '{#SUBSCRIPTION}')].expires.first()"
+                                        ]
+                                    },
+                                    {
+                                        "type": "JAVASCRIPT",
+                                        "parameters": [
+                                            "var expiry = Number(value); return expiry > 0 ? Math.floor((expiry - Date.now() / 1000) / 86400) : 99999;"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_securitysubscriptions"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "subscription",
+                                        "value": "{#SUBSCRIPTION}"
+                                    }
+                                ],
+                                "description": "Days until the API-reported Unix expiry timestamp. A timestamp of zero is treated as no expiry."
+                            }
+                        ],
+                        "trigger_prototypes": [
+                            {
+                                "uuid": "ae1f8b556d7c4e82aa3165f00db56c39",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_subscription.expires_days[\"{#SUBSCRIPTION}\"])<{$CGF.EXPIRY.WARN.DAYS}",
+                                "name": "Subscription {#SUBSCRIPTION}: Expiring or expired",
+                                "priority": "WARNING",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "license"
+                                    },
+                                    {
+                                        "tag": "subscription",
+                                        "value": "{#SUBSCRIPTION}"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
                         "uuid": "bb826154478741f5be3d9a06f6007070",
                         "name": "Site-to-site VPN tunnel discovery",
                         "type": "DEPENDENT",
@@ -3712,6 +4532,94 @@
                             ]
                         },
                         "item_prototypes": [
+                            {
+                                "uuid": "a86a7e9d9b884b6e94377587c78a9d76",
+                                "name": "S2S tunnel {#TUNNEL_NAME}: Raw tunnel details",
+                                "type": "HTTP_AGENT",
+                                "key": "raw_cgf_vpn_s2s_details[\"{#TUNNEL}\"]",
+                                "value_type": "LOG",
+                                "delay": "5m",
+                                "url": "{$API_URL}/rest/vpn/v1/tunnels/{#TUNNEL}",
+                                "query_fields": [
+                                    {
+                                        "name": "envelope",
+                                        "value": "false"
+                                    }
+                                ],
+                                "headers": [
+                                    {
+                                        "name": "accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "name": "X-API-Token",
+                                        "value": "{$API_AUTH}"
+                                    }
+                                ],
+                                "output_format": "JSON",
+                                "history": "0",
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "tunnel",
+                                        "value": "{#TUNNEL_NAME}"
+                                    },
+                                    {
+                                        "tag": "tag",
+                                        "value": "raw"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "62c0e7648d4d44fb981a2ca63df9da37",
+                                "name": "S2S tunnel {#TUNNEL_NAME}: Sessions",
+                                "type": "DEPENDENT",
+                                "key": "cgf_vpn.s2s.sessions[\"{#TUNNEL}\"]",
+                                "value_type": "UNSIGNED",
+                                "units": "sessions",
+                                "preprocessing": [
+                                    {
+                                        "type": "JSONPATH",
+                                        "parameters": [
+                                            "$.body.transport.numSessions"
+                                        ],
+                                        "error_handler": "DISCARD_VALUE"
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_vpn_s2s_details[\"{#TUNNEL}\"]"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "vpn"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "tunnel",
+                                        "value": "{#TUNNEL_NAME}"
+                                    }
+                                ],
+                                "description": "Session count reported by the tunnel transport."
+                            },
                             {
                                 "uuid": "f4fb296b19d74fd0838c00b9eec2b7dc",
                                 "name": "S2S tunnel {#TUNNEL_NAME}: Status",
