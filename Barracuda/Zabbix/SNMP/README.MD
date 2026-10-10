@@ -28,19 +28,17 @@ The template polls the local IPv4 address table using `walk[.1.3.6.1.2.1.4.20.1.
 
 Service and VPN trigger prototypes are gated by this item, so expected service or VPN inactivity on the passive member does not produce an alarm. After failover, the VIP moves and the role indication changes on the next walk (default interval: 1 minute).
 
-For the current pair, the confirmed VIP is `172.24.5.1`: it is present on `172.24.5.210` and absent on `172.24.5.211`.
-
 Set `{$CGF.HA.VIP}` as a **host-level macro on both HA hosts** to the same floating IPv4 address. Do not set it only on one member. For standalone firewalls, leave the default `0.0.0.0`; the template treats them as active.
 
-The separate `Template Barracuda NG Firewall SNMP HA - for inactive members` is not required when using this VIP-aware template. Avoid linking both unless duplicate service alerts are intended.
+Use one host per firewall node and set the same cluster VIP on both hosts. Do not use a shared cluster address as the SNMP interface address.
 
 ## Macros
 
 | Macro | Default | Purpose |
 | --- | --- | --- |
 | `{$CGF.HA.VIP}` | `0.0.0.0` | Floating IPv4 address shared by HA members. Set on both HA hosts; leave default for standalone. |
-| `{$CGF.NET.IF.IFNAME.MATCHES}` | `^.*$` | Include filter for discovered VPN names. |
-| `{$CGF.NET.IF.IFNAME.NOT_MATCHES}` | `(^PGRP-.* | ^IGRP-.*)` | Exclude filter for discovered VPN names. |
+| `{$CGF.NET.IF.IFNAME.MATCHES}` | `^.*$` | Include filter for discovered VPN tunnel names. |
+| `{$CGF.NET.IF.IFNAME.NOT_MATCHES}` | `(^PGRP-.*\|^IGRP-.*)` | Exclude filter for discovered VPN tunnel names. |
 | `{$DISK_SPACE_HIGH}` | `80` | Warning threshold for filesystem use, percent. |
 | `{$DISK_SPACE_DISASTER}` | `90` | Critical threshold for filesystem use, percent. |
 | `{$NUMBER_FW_SESSIONS}` | `65536` | Firewall session threshold. |
@@ -60,6 +58,6 @@ The box-service trigger prototype is disabled in this export. The enabled servic
 
 ## HA Limitations
 
-The installed `PHION-MIB` does not expose a dedicated primary/secondary role OID. HA role is inferred from local presence of the configured VIP instead. This requires the VIP to appear in `IP-MIB::ipAdEntAddr` only on the active member. If the VIP is not visible in that table, `cgf_ha_vip_present` will not identify the role correctly.
+This template does not use a dedicated primary/secondary role OID. Instead, it infers HA role by checking whether the configured VIP appears in the local `IP-MIB::ipAdEntAddr` table. This requires the VIP to appear only on the active member. If the VIP is not visible in that table, `cgf_ha_vip_present` will not identify the role correctly.
 
-On the passive member, the VPN table may return `No Such Object` because its VPN server is not running there. VPN discovery can therefore be unsupported on that node; VPN alerting is intended to run on the active VIP owner.
+On a passive member, the VPN table may be unavailable and return `No Such Object`. VPN discovery can therefore be unsupported on that node; run VPN alerting on the active VIP owner.

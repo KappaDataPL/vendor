@@ -1,24 +1,24 @@
-# Monitoring Barracuda CGF w Zabbix
+# Barracuda CGF API Monitoring in Zabbix
 
-`Template Barracuda NG Firewall API.json` to eksport template'u dla Zabbix 7.4. Zbiera dane z REST API Barracuda CloudGen Firewall (CGF) przy użyciu itemów HTTP agent, a odpowiedzi JSON przetwarza przez itemy zależne i reguły discovery. Template nie wymaga agenta Zabbix na firewallu.
+`Template Barracuda NG Firewall API.json` is a Zabbix 7.4 template export. It collects data from the Barracuda CloudGen Firewall (CGF) REST API using HTTP agent items, then processes JSON responses through dependent items and discovery rules. No Zabbix agent is required on the firewall.
 
 ## Zakres monitoringu
 
-Template obejmuje 82 itemy, dwie reguły discovery i sześć wykresów. Monitoruje:
+The template includes 82 static items, two discovery rules, and six graphs. It monitors:
 
-- **Dostępność i stan systemu:** odpowiedź API, stany serwera, procesów, dysku, systemu, sieci i licencji, uptime, hostname, model, wydanie, strefę czasową i liczbę użytkowników.
-- **Zasoby:** liczbę rdzeni, obciążenie CPU, użycie i wolną pamięć oraz stan i wolne miejsce głównego systemu plików.
-- **Usługi CGF i HA:** stany wybranych usług, pamięć RESTD oraz stan, rolę i aktywność węzłów HA.
-- **Sieć:** ruch, pakiety, błędy, stan, prędkość, duplex i negocjację interfejsów. Interfejsy są wykrywane dynamicznie.
-- **Firewall:** ruch i pakiety dla klas forward, local, loopback oraz pasm QoS 0–7.
-- **VPN:** inwentaryzację tuneli site-to-site, ich stan i parametry, próbki zdrowia tuneli oraz 24-godzinne statystyki księgowe.
-- **Sesje administracyjne:** liczbę aktywnych sesji zarządzania.
+- **Availability and system state:** API response, server, process, disk, system, network, and license states; uptime, hostname, model, release, timezone, and user count.
+- **Resources:** CPU core count and load, memory usage and free memory, and root filesystem state and free space.
+- **CGF services and HA:** selected service states, RESTD memory, and HA state, role, and node activity.
+- **Networking:** interface traffic, packets, errors, link state, speed, duplex, and negotiation. Interfaces are discovered dynamically.
+- **Firewall:** traffic and packet rates for forward, local, loopback, and QoS bands 0-7.
+- **VPN:** site-to-site tunnel inventory, state and properties, tunnel health samples, and 24-hour accounting statistics.
+- **Management sessions:** active management session count.
 
-## Obsługiwane itemy
+## Supported Items
 
-Poniżej znajduje się komplet 82 itemów zdefiniowanych bezpośrednio w template'cie. Itemy opisane jako `Raw` pobierają odpowiedź API; pozostałe przetwarzają tę odpowiedź lub obliczają wartości pochodne.
+The following is the full list of 82 items defined directly in the template. Items named `Raw` fetch API responses; the others process those responses or calculate derived values.
 
-### Stan i informacje o urządzeniu
+### Device State and Information
 
 | Item | Klucz |
 | --- | --- |
@@ -41,7 +41,7 @@ Poniżej znajduje się komplet 82 itemów zdefiniowanych bezpośrednio w templat
 | Host timezone | `cgf_box_timezone` |
 | Host users count | `cgf_box_users` |
 
-### CPU i pamięć
+### CPU and Memory
 
 | Item | Klucz |
 | --- | --- |
@@ -65,7 +65,7 @@ Poniżej znajduje się komplet 82 itemów zdefiniowanych bezpośrednio w templat
 | CPU usage avg 5 minut % | `cpu.usage.avg5m` |
 | CPU usage avg 15 minut % | `cpu.usage.avg15m` |
 
-### Dyski, usługi i HA
+### Disks, Services, and HA
 
 | Item | Klucz |
 | --- | --- |
@@ -98,7 +98,7 @@ Poniżej znajduje się komplet 82 itemów zdefiniowanych bezpośrednio w templat
 | Raw active management sessions | `raw_cgf_box_sessions` |
 | Active management sessions | `cgf_box_sessions_count` |
 
-Pasma QoS mają itemy dla bajtów i pakietów na sekundę dla każdego pasma od 0 do 7. Klucze mają postać `cgf_fw.traffic.bandN.bps` oraz `cgf_fw.traffic.bandN.packets`, gdzie `N` to numer pasma.
+QoS bands have byte-rate and packet-rate items for each band from 0 through 7. Their keys are `cgf_fw.traffic.bandN.bps` and `cgf_fw.traffic.bandN.packets`, where `N` is the band number.
 
 ### VPN
 
@@ -110,9 +110,9 @@ Pasma QoS mają itemy dla bajtów i pakietów na sekundę dla każdego pasma od 
 | Site-to-site VPN sessions (24h) | `cgf_vpn.s2s.accounting.sessions_24h` |
 | Raw VPN tunnel inventory | `raw_cgf_vpn_tunnels` |
 
-### Itemy tworzone przez discovery
+### Items Created by Discovery
 
-Reguła **Network interface discovery** tworzy poniższe 10 itemów dla każdego wykrytego interfejsu. W kluczach `{#IFNAME}` jest zastępowane nazwą interfejsu:
+The **Network interface discovery** rule creates the following 10 items for each discovered interface. `{#IFNAME}` is replaced by the interface name in the keys:
 
 | Item | Klucz prototypu |
 | --- | --- |
@@ -127,7 +127,7 @@ Reguła **Network interface discovery** tworzy poniższe 10 itemów dla każdego
 | Link negotiation | `cgf_if.negotiation["{#IFNAME}"]` |
 | Interface type | `cgf_if.medium["{#IFNAME}"]` |
 
-Reguła **Site-to-site VPN tunnel discovery** filtruje tunele przez makro `{$CGF.VPN.S2S.TYPE.MATCHES}` i tworzy poniższe 23 itemy dla każdego dopasowanego tunelu. `{#TUNNEL}` i `{#TUNNEL_NAME}` są zastępowane danymi tunelu:
+The **Site-to-site VPN tunnel discovery** rule filters tunnels using `{$CGF.VPN.S2S.TYPE.MATCHES}` and creates the following 23 items for each matching tunnel. `{#TUNNEL}` and `{#TUNNEL_NAME}` are replaced with tunnel values:
 
 | Item | Klucz prototypu |
 | --- | --- |
@@ -155,44 +155,44 @@ Reguła **Site-to-site VPN tunnel discovery** filtruje tunele przez makro `{$CGF
 | Latest sample drops peer | `cgf_vpn.s2s.health.drops_peer["{#TUNNEL}"]` |
 | Latest sample drops peer ND | `cgf_vpn.s2s.health.drops_peer_nd["{#TUNNEL}"]` |
 
-Discovery interfejsów dodaje ponadto trigger stanu łącza i wykres ruchu. Discovery tuneli dodaje trigger dostępności tunelu i wykres efektywnej przepustowości.
+Interface discovery also adds a link-state trigger and traffic graph. Tunnel discovery adds a tunnel-availability trigger and effective-bandwidth graph.
 
-## Import i konfiguracja
+## Import and Configuration
 
-1. Zaimportuj `Template Barracuda NG Firewall API.json` przez **Data collection → Templates → Import**. Przed wdrożeniem sprawdź uwagi w sekcji „Do sprawdzenia przed produkcją”.
-2. Podłącz template do hosta reprezentującego firewall.
-3. Ustaw makra hosta lub template'u:
+1. Import `Template Barracuda NG Firewall API.json` through **Data collection → Templates → Import**. Review [Pre-production Checks](#pre-production-checks) before deployment.
+2. Link the template to a host representing the firewall.
+3. Set the following host or template macros:
 
-| Makro | Wymaganie |
+| Macro | Description |
 | --- | --- |
-| `{$API_URL}` | Bazowy adres REST API, np. `https://firewall.example:8443`; bez końcowego ukośnika. Eksport podaje przykład HTTP, ale w produkcji używaj HTTPS z weryfikacją certyfikatu. |
-| `{$API_AUTH}` | Token API przesyłany w nagłówku `X-API-Token`. Traktuj jako sekret i ogranicz jego widoczność w Zabbix. |
-| `{$CGF.MEMORY.USAGE.MAX}` | Próg ostrzegawczy pamięci w procentach; domyślnie `90`. |
-| `{$CGF.CPU.LOAD.PERCORE.MAX}` | Próg 5-minutowego load average na rdzeń; domyślnie `1.5`. |
-| `{$CGF.DISK.ROOT.FREE.MIN}` | Próg wolnego miejsca `/` w KB; domyślnie `2048000`. |
-| `{$CGF.VPN.S2S.TYPE.MATCHES}` | Wyrażenie regularne filtrujące typy tuneli site-to-site; domyślnie `(?i).*(site.*site\|s2s).*`. Dopasuj do wartości zwracanych przez własne API. |
+| `{$API_URL}` | Base REST API URL, for example `https://firewall.example:8443`, without a trailing slash. The export's example uses HTTP; use HTTPS with certificate verification in production. |
+| `{$API_AUTH}` | API token sent in the `X-API-Token` header. Treat it as a secret and restrict its visibility in Zabbix. |
+| `{$CGF.MEMORY.USAGE.MAX}` | Memory warning threshold in percent; default `90`. |
+| `{$CGF.CPU.LOAD.PERCORE.MAX}` | Five-minute load-average threshold per CPU core; default `1.5`. |
+| `{$CGF.DISK.ROOT.FREE.MIN}` | Minimum free space on `/` in KB; default `2048000`. |
+| `{$CGF.VPN.S2S.TYPE.MATCHES}` | Regular expression for site-to-site tunnel types; default `(?i).*(site.*site\|s2s).*`. Adapt it to values returned by your API. |
 
-Itemy HTTP odpytywane są bezpośrednio przez Zabbix server lub proxy obsługujący hosta. Z tego miejsca musi być osiągalny adres API, a certyfikat TLS firewalla musi być zaufany przez środowisko Zabbix. Szczegółowe uprawnienia tokenu i wymagane endpointy zweryfikuj dla używanej wersji CGF.
+HTTP items are polled directly by the Zabbix server or proxy responsible for the host. The API must be reachable from that system, and the firewall's TLS certificate must be trusted by the Zabbix environment. Verify token permissions and required endpoints for the CGF version in use.
 
-## Alarmy i wykresy
+## Triggers and Graphs
 
-Template zawiera alarmy dla braku odpowiedzi API, nieprawidłowych stanów firewalla i licencji, wysokiego użycia pamięci lub CPU, niskiej ilości wolnego miejsca na `/`, niedostępnych wybranych usług, stanu interfejsu innego niż `up` oraz tunelu S2S innego niż `UP`. Alarmy usług RESTD, control, boxfw i bsnmp uwzględniają stan HA, aby oceniać usługi na aktywnym węźle.
+The template has triggers for a missing API response, unhealthy firewall or license states, high memory or CPU usage, low free space on `/`, unavailable selected services, an interface link state other than `up`, and an S2S tunnel state other than `UP`. RESTD, control, boxfw, and bsnmp service triggers account for HA state when evaluating the active node.
 
-Dostępne wykresy obejmują obciążenie CPU, użycie pamięci, wolne miejsce na `/`, ruch i pakiety firewalla według klasy oraz przepustowość pasm QoS. Reguły discovery tworzą elementy i wykresy ruchu dla interfejsów oraz elementy, alarm i wykres przepustowości dla wykrytych tuneli S2S.
+Available graphs cover CPU load, memory usage, free space on `/`, firewall traffic and packet rate by class, and QoS-band throughput. Discovery creates interface items and traffic graphs, plus S2S tunnel items, an availability trigger, and an effective-bandwidth graph.
 
-## Do sprawdzenia przed produkcją
+## Pre-production Checks
 
-- **Jawny typ wartości CPU:** itemy `cgf_cpu_usage`, `cpu.usage.avg5m` i `cpu.usage.avg15m` nie mają w eksporcie pola `value_type`. Sprawdź import na docelowej wersji Zabbix i ustaw typ numeryczny zgodny z danymi, jeśli Zabbix go nie uzupełni.
-- **Interpretacja metryk zdrowia VPN:** itemy nazwane `Latest sample` używają JSONPath z wildcardem `TunnelHealthSamples[*]` i funkcją `sum()`, natomiast opóźnienie używa `avg()`. Zweryfikuj na rzeczywistej odpowiedzi API, czy agregacja odpowiada oczekiwanemu zakresowi i jednostkom; opis eksportu wskazuje, że jednostka opóźnienia i efektywnej przepustowości nie jest określona w Swagger.
-- **Dane opcjonalne QoS:** brak pasma QoS 0–7 jest zamieniany na `0`. Odróżnij brak pola od rzeczywistego zerowego ruchu podczas interpretacji wykresów.
-- **Reset liczników interfejsów:** ruch, pakiety i błędy są przeliczane na sekundę z liczników przez `CHANGE_PER_SECOND`. Po restarcie urządzenia lub wyzerowaniu licznika sprawdź wartości początkowe i ewentualne skoki.
-- **Filtr tuneli:** domyślne wyrażenie regularne opiera się na nazwie typu zwracanej przez API. Potwierdź, że obejmuje wszystkie właściwe tunele i nie włącza tuneli klienckich.
-- **Wersja API i dane odpowiedzi:** ścieżki JSON, nazwy pól i endpointy pochodzą z założeń template'u. Potwierdź je na firewallu i wersji CGF używanych w danym wdrożeniu.
+- **Explicit CPU value types:** `cgf_cpu_usage`, `cpu.usage.avg5m`, and `cpu.usage.avg15m` have no `value_type` field in the export. Test the import on the target Zabbix version and set a numeric type if Zabbix does not supply one.
+- **VPN health metric interpretation:** items named `Latest sample` use JSONPath wildcards over `TunnelHealthSamples[*]` with `sum()`, while latency uses `avg()`. Check the actual API response to confirm the aggregation window and units. The export notes that Swagger does not specify units for latency or effective bandwidth.
+- **Optional QoS data:** missing QoS bands 0-7 are converted to `0`. Distinguish an absent field from actual zero traffic when reading graphs.
+- **Interface counter resets:** traffic, packet, and error counters are converted to per-second rates using `CHANGE_PER_SECOND`. Check initial values and possible spikes after a device restart or counter reset.
+- **Tunnel filter:** the default regular expression relies on the tunnel type returned by the API. Confirm that it includes the intended site-to-site tunnels and excludes client tunnels.
+- **API version and response data:** JSON paths, field names, and endpoints are assumptions in the template. Confirm them against the firewall and CGF version used in your deployment.
 
-## Bezpieczeństwo
+## Security
 
-- Przechowuj token jako makro sekretne lub w odpowiednim vault Zabbix, ogranicz dostęp do konfiguracji hosta/template'u i nie zapisuj prawdziwych tokenów w repozytorium.
-- Preferuj HTTPS z poprawnie zweryfikowanym certyfikatem. Nie wyłączaj weryfikacji TLS jako obejścia problemów z certyfikatem.
-- Ogranicz token do wymaganych uprawnień odczytu i udostępnij API tylko z zaufanej sieci monitoringu.
-- Surowe odpowiedzi API są przechowywane jako itemy typu LOG; część z nich ma `history: 0`, ale pozostałe nie. Przed wdrożeniem sprawdź retencję, dostęp do historii i ewentualną obecność danych wrażliwych w odpowiedziach.
-- Przetestuj import, preprocessing, discovery i alarmy na urządzeniu testowym przed podłączeniem template'u do środowiska produkcyjnego.
+- Store the token as a secret macro or in an appropriate Zabbix vault, restrict access to host/template configuration, and do not commit real tokens.
+- Prefer HTTPS with a properly verified certificate. Do not disable TLS verification to work around certificate problems.
+- Restrict the token to required read permissions and expose the API only to trusted monitoring systems.
+- Raw API responses are stored as LOG items; some have `history: 0`, while others do not. Review retention, history access, and whether responses may contain sensitive data before deployment.
+- Test import, preprocessing, discovery, and triggers on a non-production appliance before linking the template to production hosts.
