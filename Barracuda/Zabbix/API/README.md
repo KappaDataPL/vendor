@@ -2,21 +2,22 @@
 
 `Template Barracuda NG Firewall API.json` is a Zabbix 7.4 template export. It collects data from the Barracuda CloudGen Firewall (CGF) REST API using HTTP agent items, then processes JSON responses through dependent items and discovery rules. No Zabbix agent is required on the firewall.
 
-## Zakres monitoringu
+## Monitoring Scope
 
-The template includes 82 static items, two discovery rules, and six graphs. It monitors:
+The template includes 90 static items, five discovery rules, and six graphs. It monitors:
 
 - **Availability and system state:** API response, server, process, disk, system, network, and license states; uptime, hostname, model, release, timezone, and user count.
-- **Resources:** CPU core count and load, memory usage and free memory, and root filesystem state and free space.
+- **Resources:** CPU core count and load, memory usage and free memory, root filesystem state and free space, and non-root filesystem usage via discovery.
 - **CGF services and HA:** selected service states, RESTD memory, and HA state, role, and node activity.
 - **Networking:** interface traffic, packets, errors, link state, speed, duplex, and negotiation. Interfaces are discovered dynamically.
 - **Firewall:** traffic and packet rates for forward, local, loopback, and QoS bands 0-7.
 - **VPN:** site-to-site tunnel inventory, state and properties, tunnel health samples, and 24-hour accounting statistics.
 - **Management sessions:** active management session count.
+- **Licensing and subscriptions:** discovered license and security subscription state, status, and expiry warnings.
 
 ## Supported Items
 
-The following is the full list of 82 items defined directly in the template. Items named `Raw` fetch API responses; the others process those responses or calculate derived values.
+The following is the full list of 90 items defined directly in the template. Items named `Raw` fetch API responses; the others process those responses or calculate derived values.
 
 ### Device State and Information
 
@@ -84,7 +85,7 @@ The following is the full list of 82 items defined directly in the template. Ite
 | HA secondary active | `cgf_ha_secondary_active` |
 | HA status | `cgf_ha_status` |
 
-### Firewall i sesje
+### Firewall and sessions
 
 | Item | Klucz |
 | --- | --- |
@@ -99,6 +100,14 @@ The following is the full list of 82 items defined directly in the template. Ite
 | Active management sessions | `cgf_box_sessions_count` |
 
 QoS bands have byte-rate and packet-rate items for each band from 0 through 7. Their keys are `cgf_fw.traffic.bandN.bps` and `cgf_fw.traffic.bandN.packets`, where `N` is the band number.
+
+### Filesystem, licenses, and subscriptions discovered by LLD
+
+The template also creates discovery items for non-root filesystems, license objects, and security subscriptions:
+
+- **Non-root filesystem discovery** adds state, free-space, and low-free-space trigger prototypes using `{$CGF.DISK.FREE.MIN}`.
+- **License discovery** adds per-license state, status, and days-until-expiry items with an expiry trigger using `{$CGF.EXPIRY.WARN.DAYS}`.
+- **Security subscription discovery** adds per-subscription state, status, and days-until-expiry items with the same expiry warning threshold.
 
 ### VPN
 
@@ -170,15 +179,17 @@ Interface discovery also adds a link-state trigger and traffic graph. Tunnel dis
 | `{$CGF.MEMORY.USAGE.MAX}` | Memory warning threshold in percent; default `90`. |
 | `{$CGF.CPU.LOAD.PERCORE.MAX}` | Five-minute load-average threshold per CPU core; default `1.5`. |
 | `{$CGF.DISK.ROOT.FREE.MIN}` | Minimum free space on `/` in KB; default `2048000`. |
+| `{$CGF.DISK.FREE.MIN}` | Minimum free space for discovered non-root filesystems in KB; default `2048000`. |
 | `{$CGF.VPN.S2S.TYPE.MATCHES}` | Regular expression for site-to-site tunnel types; default `(?i).*(site.*site\|s2s).*`. Adapt it to values returned by your API. |
+| `{$CGF.EXPIRY.WARN.DAYS}` | Warning threshold for license and subscription expiry in days; default `30`. |
 
 HTTP items are polled directly by the Zabbix server or proxy responsible for the host. The API must be reachable from that system, and the firewall's TLS certificate must be trusted by the Zabbix environment. Verify token permissions and required endpoints for the CGF version in use.
 
 ## Triggers and Graphs
 
-The template has triggers for a missing API response, unhealthy firewall or license states, high memory or CPU usage, low free space on `/`, unavailable selected services, an interface link state other than `up`, and an S2S tunnel state other than `UP`. RESTD, control, boxfw, and bsnmp service triggers account for HA state when evaluating the active node.
+The template has triggers for a missing API response, unhealthy firewall or license states, high memory or CPU usage, low free space on `/`, low space on discovered non-root filesystems, expiring or expired licenses and subscriptions, unavailable selected services, an interface link state other than `up`, and an S2S tunnel state other than `UP`. RESTD, control, boxfw, and bsnmp service triggers account for HA state when evaluating the active node.
 
-Available graphs cover CPU load, memory usage, free space on `/`, firewall traffic and packet rate by class, and QoS-band throughput. Discovery creates interface items and traffic graphs, plus S2S tunnel items, an availability trigger, and an effective-bandwidth graph.
+Available graphs cover CPU load, memory usage, free space on `/`, firewall traffic and packet rate by class, and QoS-band throughput. Discovery creates interface items and traffic graphs, plus non-root filesystem warnings, S2S tunnel items, an availability trigger, and an effective-bandwidth graph.
 
 ## Pre-production Checks
 
