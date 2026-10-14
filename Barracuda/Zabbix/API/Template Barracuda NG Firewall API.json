@@ -1088,12 +1088,64 @@
                                 "value": "API"
                             }
                         ],
+                        "triggers": []
+                    },
+                    {
+                        "uuid": "2cc33abd4a814201941a5628501d3249",
+                        "name": "Root disk used space %",
+                        "type": "DEPENDENT",
+                        "key": "cgf_disk_root_used_percent",
+                        "value_type": "FLOAT",
+                        "units": "%",
+                        "preprocessing": [
+                            {
+                                "type": "JAVASCRIPT",
+                                "parameters": [
+                                    "var disks = JSON.parse(value).body.disks; for (var i = 0; i < disks.length; i++) { var disk = disks[i]; if (disk.mountpoint === '/') { var size = Number(disk.size); var free = Number(disk.free); if (size > 0) return ((size - free) / size) * 100; } } throw 'Root filesystem size unavailable';"
+                                ]
+                            }
+                        ],
+                        "master_item": {
+                            "key": "raw_cgf_box_disks"
+                        },
+                        "tags": [
+                            {
+                                "tag": "Application",
+                                "value": "Barracuda CGF"
+                            },
+                            {
+                                "tag": "component",
+                                "value": "storage"
+                            },
+                            {
+                                "tag": "type",
+                                "value": "API"
+                            }
+                        ],
                         "triggers": [
                             {
-                                "uuid": "c029c1f98282400c8f8e1f9f85e0a102",
-                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk_root_free)<{$CGF.DISK.ROOT.FREE.MIN}",
-                                "name": "Root disk free space is low",
-                                "priority": "WARNING",
+                                "uuid": "ead67a2b6a134cdbb1c7f7091f9f82c6",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk_root_used_percent)>{$CGF.DISK.USED.WARN}",
+                                "name": "Root filesystem used space is high",
+                                "priority": "HIGH",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "98b3bf424ba841ca9ceac246fa014948",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk_root_used_percent)>{$CGF.DISK.USED.CRIT}",
+                                "name": "Root filesystem used space is critically high",
+                                "priority": "DISASTER",
+                                "dependencies": [
+                                    {
+                                        "name": "Root filesystem used space is high",
+                                        "expression": "last(/Template Barracuda NG Firewall API/cgf_disk_root_used_percent)>{$CGF.DISK.USED.WARN}"
+                                    }
+                                ],
                                 "tags": [
                                     {
                                         "tag": "component",
@@ -3490,9 +3542,9 @@
                         "description": "5-minute load average threshold per CPU core"
                     },
                     {
-                        "macro": "{$CGF.DISK.ROOT.FREE.MIN}",
-                        "value": "2048000",
-                        "description": "Root filesystem free space warning threshold in KB"
+                        "macro": "{$CGF.DISK.USED.WARN}",
+                        "value": "80",
+                        "description": "Filesystem usage warning threshold in percent"
                     },
                     {
                         "macro": "{$CGF.VPN.S2S.TYPE.MATCHES}",
@@ -3500,9 +3552,9 @@
                         "description": "Regex to include site-to-site tunnel types and exclude typical client-to-site tunnel names."
                     },
                     {
-                        "macro": "{$CGF.DISK.FREE.MIN}",
-                        "value": "2048000",
-                        "description": "Minimum free space for discovered non-root filesystems in KB."
+                        "macro": "{$CGF.DISK.USED.CRIT}",
+                        "value": "90",
+                        "description": "Filesystem usage critical threshold in percent"
                     },
                     {
                         "macro": "{$CGF.EXPIRY.WARN.DAYS}",
@@ -4081,6 +4133,43 @@
                                 ]
                             },
                             {
+                                "uuid": "43d21f9817a942109b5f2ae634891ee7",
+                                "name": "Filesystem {#MOUNTPOINT}: Used space %",
+                                "type": "DEPENDENT",
+                                "key": "cgf_disk.used.percent[\"{#MOUNTPOINT}\"]",
+                                "value_type": "FLOAT",
+                                "units": "%",
+                                "preprocessing": [
+                                    {
+                                        "type": "JAVASCRIPT",
+                                        "parameters": [
+                                            "var root = JSON.parse(value); var disks = root && root.body && root.body.disks; var mount = '{#MOUNTPOINT}'; if (!Array.isArray(disks)) throw 'Disk list unavailable'; for (var i = 0; i < disks.length; i++) { var disk = disks[i]; if (disk && String(disk.mountpoint) === mount) { var size = Number(disk.size); var free = Number(disk.free); if (isFinite(size) && size > 0 && isFinite(free)) return ((size - free) / size) * 100; throw 'Invalid disk size or free space'; } } throw 'Filesystem not found: ' + mount;"
+                                        ]
+                                    }
+                                ],
+                                "master_item": {
+                                    "key": "raw_cgf_box_disks"
+                                },
+                                "tags": [
+                                    {
+                                        "tag": "Application",
+                                        "value": "Barracuda CGF"
+                                    },
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "type",
+                                        "value": "API"
+                                    },
+                                    {
+                                        "tag": "mountpoint",
+                                        "value": "{#MOUNTPOINT}"
+                                    }
+                                ]
+                            },
+                            {
                                 "uuid": "a33ddeb1abac42259a44c71ed5f3946c",
                                 "name": "Filesystem {#MOUNTPOINT}: Free inodes",
                                 "type": "DEPENDENT",
@@ -4137,9 +4226,31 @@
                             },
                             {
                                 "uuid": "267149982293417ba03a3d5c897a3985",
-                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.free[\"{#MOUNTPOINT}\"])<{$CGF.DISK.FREE.MIN}",
-                                "name": "Filesystem {#MOUNTPOINT}: Free space is low",
-                                "priority": "WARNING",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.used.percent[\"{#MOUNTPOINT}\"])>{$CGF.DISK.USED.WARN}",
+                                "name": "Filesystem {#MOUNTPOINT}: Used space is high",
+                                "priority": "HIGH",
+                                "tags": [
+                                    {
+                                        "tag": "component",
+                                        "value": "storage"
+                                    },
+                                    {
+                                        "tag": "mountpoint",
+                                        "value": "{#MOUNTPOINT}"
+                                    }
+                                ]
+                            },
+                            {
+                                "uuid": "65fb1dfeef9f45eeac2ea0d55e7b63fc",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.used.percent[\"{#MOUNTPOINT}\"])>{$CGF.DISK.USED.CRIT}",
+                                "name": "Filesystem {#MOUNTPOINT}: Used space is critically high",
+                                "priority": "DISASTER",
+                                "dependencies": [
+                                    {
+                                        "name": "Filesystem {#MOUNTPOINT}: Used space is high",
+                                        "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.used.percent[\"{#MOUNTPOINT}\"])>{$CGF.DISK.USED.WARN}"
+                                    }
+                                ],
                                 "tags": [
                                     {
                                         "tag": "component",

@@ -4,10 +4,10 @@
 
 ## Monitoring Scope
 
-The template includes 90 static items, six discovery rules, and six graphs. It monitors:
+The template includes 91 static items, six discovery rules, and six graphs. It monitors:
 
 - **Availability and system state:** API response, server, process, disk, system, network, and license states; uptime, hostname, model, release, timezone, and user count.
-- **Resources:** CPU core count and load, memory usage and free memory, root filesystem state and free space, and non-root filesystem usage via discovery.
+- **Resources:** CPU core count and load, memory usage and free memory, and root and discovered filesystem capacity and usage.
 - **CGF services and HA:** selected service states, RESTD memory, and HA state, role, and node activity.
 - **Networking:** interface traffic, packets, errors, link state, speed, duplex, and negotiation. Interfaces are discovered dynamically.
 - **Firewall:** traffic and packet rates for forward, local, loopback, and QoS bands 0-7.
@@ -17,7 +17,7 @@ The template includes 90 static items, six discovery rules, and six graphs. It m
 
 ## Supported Items
 
-The following is the full list of 90 items defined directly in the template. Items named `Raw` fetch API responses; the others process those responses or calculate derived values.
+The following is the full list of 91 items defined directly in the template. Items named `Raw` fetch API responses; the others process those responses or calculate derived values.
 
 ### Device State and Information
 
@@ -73,6 +73,7 @@ The following is the full list of 90 items defined directly in the template. Ite
 | Raw box disks | `raw_cgf_box_disks` |
 | Root disk state | `cgf_disk_root_state` |
 | Root disk free kB | `cgf_disk_root_free` |
+| Root disk used % | `cgf_disk_root_used_percent` |
 | Raw box services | `raw_cgf_box_services` |
 | Service RESTD state | `cgf_service_restd_state` |
 | Service RESTD memory | `cgf_service_restd_memory` |
@@ -105,7 +106,7 @@ QoS bands have byte-rate and packet-rate items for each band from 0 through 7. T
 
 The template also creates discovery items for non-root filesystems, license objects, and security subscriptions:
 
-- **Non-root filesystem discovery** adds state, free-space, and low-free-space trigger prototypes using `{$CGF.DISK.FREE.MIN}`.
+- **Non-root filesystem discovery** adds state, free-space, free-inode, and used-space percentage items. Usage is calculated as `(size - free) / size * 100`; warning and critical triggers use `{$CGF.DISK.USED.WARN}` and `{$CGF.DISK.USED.CRIT}`.
 - **License discovery** adds state, status, and days-until-expiry items for each license/module pair, with an expiry trigger using `{$CGF.EXPIRY.WARN.DAYS}`.
 - **Security subscription discovery** adds per-subscription state, status, and days-until-expiry items with the same expiry warning threshold.
 
@@ -189,8 +190,8 @@ Aggregate state is `UP` when all non-passive threads are up, `DEGRADED` when onl
 | `{$API_AUTH}` | API token sent in the `X-API-Token` header. Treat it as a secret and restrict its visibility in Zabbix. |
 | `{$CGF.MEMORY.USAGE.MAX}` | Memory warning threshold in percent; default `90`. |
 | `{$CGF.CPU.LOAD.PERCORE.MAX}` | Five-minute load-average threshold per CPU core; default `1.5`. |
-| `{$CGF.DISK.ROOT.FREE.MIN}` | Minimum free space on `/` in KB; default `2048000`. |
-| `{$CGF.DISK.FREE.MIN}` | Minimum free space for discovered non-root filesystems in KB; default `2048000`. |
+| `{$CGF.DISK.USED.WARN}` | Filesystem usage warning threshold; default `80%`. |
+| `{$CGF.DISK.USED.CRIT}` | Filesystem usage critical threshold; default `90%`. |
 | `{$CGF.VPN.S2S.TYPE.MATCHES}` | Regular expression for site-to-site tunnel types; default `(?i).*(site.*site\|s2s).*`. Adapt it to values returned by your API. |
 | `{$CGF.EXPIRY.WARN.DAYS}` | Warning threshold for license and subscription expiry in days; default `30`. |
 
@@ -198,7 +199,7 @@ HTTP items are polled directly by the Zabbix server or proxy responsible for the
 
 ## Triggers and Graphs
 
-The template has triggers for a missing API response, unhealthy firewall or license states, high memory or CPU usage, low free space on `/`, low space on discovered non-root filesystems, expiring or expired licenses and subscriptions, unavailable selected services, an interface link state other than `up`, and an S2S tunnel state other than `UP`. RESTD, control, boxfw, and bsnmp service triggers account for HA state when evaluating the active node.
+The template has triggers for a missing API response, unhealthy firewall or license states, high memory or CPU usage, filesystem usage above warning or critical percentage thresholds, expiring or expired licenses and subscriptions, unavailable selected services, an interface link state other than `up`, and an S2S tunnel state other than `UP`. RESTD, control, boxfw, and bsnmp service triggers account for HA state when evaluating the active node.
 
 Available graphs cover CPU load, memory usage, free space on `/`, firewall traffic and packet rate by class, and QoS-band throughput. Discovery creates interface items and traffic graphs, plus non-root filesystem warnings, S2S tunnel items, an availability trigger, and an effective-bandwidth graph.
 
