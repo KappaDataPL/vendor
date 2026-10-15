@@ -209,8 +209,8 @@
                             {
                                 "uuid": "a029c1f98282400c8f8e1f9f85e0a103",
                                 "expression": "last(/Template Barracuda NG Firewall API/cgf_box_disk_state)<>\"ok\"",
-                                "name": "Firewall disk state is not OK",
-                                "priority": "HIGH",
+                                "name": "CGF aggregate disk status is {ITEM.LASTVALUE}; see filesystem alerts",
+                                "priority": "WARNING",
                                 "tags": [
                                     {
                                         "tag": "component",
@@ -255,8 +255,8 @@
                             {
                                 "uuid": "a029c1f98282400c8f8e1f9f85e0a104",
                                 "expression": "last(/Template Barracuda NG Firewall API/cgf_box_system_state)<>\"ok\"",
-                                "name": "Firewall system state is not OK",
-                                "priority": "HIGH",
+                                "name": "CGF aggregate system status is {ITEM.LASTVALUE}; see component alerts",
+                                "priority": "WARNING",
                                 "tags": [
                                     {
                                         "tag": "component",
@@ -3543,7 +3543,7 @@
                     },
                     {
                         "macro": "{$CGF.DISK.USED.WARN}",
-                        "value": "80",
+                        "value": "70",
                         "description": "Filesystem usage warning threshold in percent"
                     },
                     {
@@ -4210,9 +4210,9 @@
                         "trigger_prototypes": [
                             {
                                 "uuid": "51f762caa1614191aa5564694177c951",
-                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.state[\"{#MOUNTPOINT}\"])<>\"ok\"",
-                                "name": "Filesystem {#MOUNTPOINT}: State is not OK",
-                                "priority": "HIGH",
+                                "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.state[\"{#MOUNTPOINT}\"])<>\"ok\" and last(/Template Barracuda NG Firewall API/cgf_disk.used.percent[\"{#MOUNTPOINT}\"])<={$CGF.DISK.USED.WARN}",
+                                "name": "Filesystem {#MOUNTPOINT}: CGF reports non-OK state; usage is below warning threshold, check filesystem health",
+                                "priority": "WARNING",
                                 "tags": [
                                     {
                                         "tag": "component",
@@ -4227,8 +4227,8 @@
                             {
                                 "uuid": "267149982293417ba03a3d5c897a3985",
                                 "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.used.percent[\"{#MOUNTPOINT}\"])>{$CGF.DISK.USED.WARN}",
-                                "name": "Filesystem {#MOUNTPOINT}: Used space is high",
-                                "priority": "HIGH",
+                                "name": "Filesystem {#MOUNTPOINT}: used space is {ITEM.LASTVALUE}% (warning > {$CGF.DISK.USED.WARN}%)",
+                                "priority": "WARNING",
                                 "tags": [
                                     {
                                         "tag": "component",
@@ -4243,11 +4243,11 @@
                             {
                                 "uuid": "65fb1dfeef9f45eeac2ea0d55e7b63fc",
                                 "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.used.percent[\"{#MOUNTPOINT}\"])>{$CGF.DISK.USED.CRIT}",
-                                "name": "Filesystem {#MOUNTPOINT}: Used space is critically high",
+                                "name": "Filesystem {#MOUNTPOINT}: used space is {ITEM.LASTVALUE}% (critical > {$CGF.DISK.USED.CRIT}%)",
                                 "priority": "DISASTER",
                                 "dependencies": [
                                     {
-                                        "name": "Filesystem {#MOUNTPOINT}: Used space is high",
+                                        "name": "Filesystem {#MOUNTPOINT}: used space is {ITEM.LASTVALUE}% (warning > {$CGF.DISK.USED.WARN}%)",
                                         "expression": "last(/Template Barracuda NG Firewall API/cgf_disk.used.percent[\"{#MOUNTPOINT}\"])>{$CGF.DISK.USED.WARN}"
                                     }
                                 ],
